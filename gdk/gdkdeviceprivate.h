@@ -114,17 +114,18 @@ struct _GdkDeviceClass
                                       GdkEventMask     event_mask);
 };
 
-void  _gdk_device_set_associated_device (GdkDevice *device,
+/* CHB GDK_AVAILABLE_IN_ALL added*/
+GDK_AVAILABLE_IN_ALL void  _gdk_device_set_associated_device (GdkDevice *device,
                                          GdkDevice *relative);
 
-void  _gdk_device_reset_axes (GdkDevice   *device);
-guint _gdk_device_add_axis   (GdkDevice   *device,
+GDK_AVAILABLE_IN_ALL void  _gdk_device_reset_axes (GdkDevice   *device);
+GDK_AVAILABLE_IN_ALL guint _gdk_device_add_axis   (GdkDevice   *device,
                               GdkAtom      label_atom,
                               GdkAxisUse   use,
                               gdouble      min_value,
                               gdouble      max_value,
                               gdouble      resolution);
-void _gdk_device_get_axis_info (GdkDevice  *device,
+GDK_AVAILABLE_IN_ALL void _gdk_device_get_axis_info (GdkDevice  *device,
 				guint       index,
 				GdkAtom    *label_atom,
 				GdkAxisUse *use,
@@ -132,16 +133,16 @@ void _gdk_device_get_axis_info (GdkDevice  *device,
 				gdouble    *max_value,
 				gdouble    *resolution);
 
-void _gdk_device_set_keys    (GdkDevice   *device,
+GDK_AVAILABLE_IN_ALL void _gdk_device_set_keys    (GdkDevice   *device,
                               guint        num_keys);
 
-gboolean   _gdk_device_translate_window_coord (GdkDevice *device,
+GDK_AVAILABLE_IN_ALL gboolean   _gdk_device_translate_window_coord (GdkDevice *device,
                                                GdkWindow *window,
                                                guint      index,
                                                gdouble    value,
                                                gdouble   *axis_value);
 
-gboolean   _gdk_device_translate_screen_coord (GdkDevice *device,
+GDK_AVAILABLE_IN_ALL gboolean   _gdk_device_translate_screen_coord (GdkDevice *device,
                                                GdkWindow *window,
                                                gdouble    window_root_x,
                                                gdouble    window_root_y,
@@ -149,19 +150,19 @@ gboolean   _gdk_device_translate_screen_coord (GdkDevice *device,
                                                gdouble    value,
                                                gdouble   *axis_value);
 
-gboolean   _gdk_device_translate_axis         (GdkDevice *device,
+GDK_AVAILABLE_IN_ALL gboolean   _gdk_device_translate_axis         (GdkDevice *device,
                                                guint      index,
                                                gdouble    value,
                                                gdouble   *axis_value);
 
-GdkTimeCoord ** _gdk_device_allocate_history  (GdkDevice *device,
+GDK_AVAILABLE_IN_ALL GdkTimeCoord ** _gdk_device_allocate_history  (GdkDevice *device,
                                                gint       n_events);
 
-void _gdk_device_add_slave (GdkDevice *device,
+GDK_AVAILABLE_IN_ALL void _gdk_device_add_slave (GdkDevice *device,
                             GdkDevice *slave);
-void _gdk_device_remove_slave (GdkDevice *device,
+GDK_AVAILABLE_IN_ALL void _gdk_device_remove_slave (GdkDevice *device,
                                GdkDevice *slave);
-void _gdk_device_query_state                  (GdkDevice        *device,
+GDK_AVAILABLE_IN_ALL void _gdk_device_query_state                  (GdkDevice        *device,
                                                GdkWindow        *window,
                                                GdkWindow       **root_window,
                                                GdkWindow       **child_window,
@@ -170,12 +171,12 @@ void _gdk_device_query_state                  (GdkDevice        *device,
                                                gdouble          *win_x,
                                                gdouble          *win_y,
                                                GdkModifierType  *mask);
-GdkWindow * _gdk_device_window_at_position    (GdkDevice        *device,
+GDK_AVAILABLE_IN_ALL GdkWindow * _gdk_device_window_at_position    (GdkDevice        *device,
                                                gdouble          *win_x,
                                                gdouble          *win_y,
                                                GdkModifierType  *mask,
                                                gboolean          get_toplevel);
-
+/*eof added CHB*/
 G_END_DECLS
 
 #endif /* __GDK_DEVICE_PRIVATE_H__ */

@@ -63,7 +63,19 @@
 #endif
 
 #include <gdk/gdk-autocleanup.h>
-
+/*CHB    I included the following in addition, now removed again...
+#include <gdk/broadway/gdkbroadwaycursor.h>
+#include <gdk/broadway/gdkbroadway-server.h>
+#include <gdk/broadway/gdkbroadwayvisual.h>
+#include <gdk/broadway/gdkbroadwaywindow.h>
+#include <gdk/broadway/gdkdevice-broadway.h>
+#include <gdk/broadway/gdkdevicemanager-broadway.h>
+#include <gdk/broadway/gdkdisplay-broadway.h>
+#include <gdk/broadway/gdkeventsource.h>
+#include <gdk/broadway/gdkprivate-broadway.h>
+#include <gdk/broadway/gdkscreen-broadway.h>
+#include <gdk/broadway/gdkwindow-broadway.h>
+*eof CHB*/
 #undef __GDK_H_INSIDE__
 
 #endif /* __GDK_H__ */

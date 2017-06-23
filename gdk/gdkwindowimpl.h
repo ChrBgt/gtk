@@ -304,7 +304,8 @@ struct _GdkWindowImplClass
 };
 
 /* Interface Functions */
-GType gdk_window_impl_get_type (void) G_GNUC_CONST;
+/*CHB GDK_AVAILABLE_IN_ALL added */
+GDK_AVAILABLE_IN_ALL GType gdk_window_impl_get_type (void) G_GNUC_CONST;
 
 G_END_DECLS
 
