@@ -381,46 +381,47 @@ extern gint       _gdk_screen_number;
 extern gchar     *_gdk_display_arg_name;
 extern gboolean   _gdk_disable_multidevice;
 
-GdkEvent* _gdk_event_unqueue (GdkDisplay *display);
+/*CHB GDK_AVAILABLE_IN_ALL added in the following lines*/
+GDK_AVAILABLE_IN_ALL GdkEvent* _gdk_event_unqueue (GdkDisplay *display);
 
-void _gdk_event_filter_unref        (GdkWindow      *window,
+GDK_AVAILABLE_IN_ALL void _gdk_event_filter_unref        (GdkWindow      *window,
 				     GdkEventFilter *filter);
 
-void     _gdk_event_set_pointer_emulated (GdkEvent *event,
+GDK_AVAILABLE_IN_ALL void     _gdk_event_set_pointer_emulated (GdkEvent *event,
                                           gboolean  emulated);
-gboolean _gdk_event_get_pointer_emulated (GdkEvent *event);
+GDK_AVAILABLE_IN_ALL gboolean _gdk_event_get_pointer_emulated (GdkEvent *event);
 
-void   _gdk_event_emit               (GdkEvent   *event);
-GList* _gdk_event_queue_find_first   (GdkDisplay *display);
-void   _gdk_event_queue_remove_link  (GdkDisplay *display,
+GDK_AVAILABLE_IN_ALL void   _gdk_event_emit               (GdkEvent   *event);
+GDK_AVAILABLE_IN_ALL GList* _gdk_event_queue_find_first   (GdkDisplay *display);
+GDK_AVAILABLE_IN_ALL void   _gdk_event_queue_remove_link  (GdkDisplay *display,
                                       GList      *node);
-GList* _gdk_event_queue_prepend      (GdkDisplay *display,
+GDK_AVAILABLE_IN_ALL GList* _gdk_event_queue_prepend      (GdkDisplay *display,
                                       GdkEvent   *event);
-GList* _gdk_event_queue_append       (GdkDisplay *display,
+GDK_AVAILABLE_IN_ALL GList* _gdk_event_queue_append       (GdkDisplay *display,
                                       GdkEvent   *event);
-GList* _gdk_event_queue_insert_after (GdkDisplay *display,
+GDK_AVAILABLE_IN_ALL GList* _gdk_event_queue_insert_after (GdkDisplay *display,
                                       GdkEvent   *after_event,
                                       GdkEvent   *event);
-GList* _gdk_event_queue_insert_before(GdkDisplay *display,
+GDK_AVAILABLE_IN_ALL GList* _gdk_event_queue_insert_before(GdkDisplay *display,
                                       GdkEvent   *after_event,
                                       GdkEvent   *event);
 
-void    _gdk_event_queue_handle_motion_compression (GdkDisplay *display);
-void    _gdk_event_queue_flush                     (GdkDisplay       *display);
+GDK_AVAILABLE_IN_ALL void    _gdk_event_queue_handle_motion_compression (GdkDisplay *display);
+GDK_AVAILABLE_IN_ALL void    _gdk_event_queue_flush                     (GdkDisplay       *display);
 
-void   _gdk_event_button_generate    (GdkDisplay *display,
+GDK_AVAILABLE_IN_ALL void   _gdk_event_button_generate    (GdkDisplay *display,
                                       GdkEvent   *event);
 
-void _gdk_windowing_event_data_copy (const GdkEvent *src,
+GDK_AVAILABLE_IN_ALL void _gdk_windowing_event_data_copy (const GdkEvent *src,
                                      GdkEvent       *dst);
-void _gdk_windowing_event_data_free (GdkEvent       *event);
+GDK_AVAILABLE_IN_ALL void _gdk_windowing_event_data_free (GdkEvent       *event);
 
-void _gdk_set_window_state (GdkWindow *window,
+GDK_AVAILABLE_IN_ALL void _gdk_set_window_state (GdkWindow *window,
                             GdkWindowState new_state);
 
-gboolean        _gdk_cairo_surface_extents       (cairo_surface_t *surface,
+GDK_AVAILABLE_IN_ALL gboolean        _gdk_cairo_surface_extents       (cairo_surface_t *surface,
                                                   GdkRectangle    *extents);
-void            gdk_gl_texture_from_surface      (cairo_surface_t *surface,
+GDK_AVAILABLE_IN_ALL void            gdk_gl_texture_from_surface      (cairo_surface_t *surface,
                                                   cairo_region_t  *region);
 
 typedef struct {
@@ -428,40 +429,40 @@ typedef struct {
   float u1, v1, u2, v2;
 } GdkTexturedQuad;
 
-void           gdk_gl_texture_quads               (GdkGLContext *paint_context,
+GDK_AVAILABLE_IN_ALL void           gdk_gl_texture_quads               (GdkGLContext *paint_context,
                                                    guint texture_target,
                                                    int n_quads,
                                                    GdkTexturedQuad *quads);
 
-void            gdk_cairo_surface_mark_as_direct (cairo_surface_t *surface,
+GDK_AVAILABLE_IN_ALL void            gdk_cairo_surface_mark_as_direct (cairo_surface_t *surface,
                                                   GdkWindow       *window);
-cairo_region_t *gdk_cairo_region_from_clip       (cairo_t         *cr);
+GDK_AVAILABLE_IN_ALL cairo_region_t *gdk_cairo_region_from_clip       (cairo_t         *cr);
 
 
 /*************************************
  * Interfaces used by windowing code *
  *************************************/
 
-cairo_surface_t *
+GDK_AVAILABLE_IN_ALL cairo_surface_t *
            _gdk_window_ref_cairo_surface (GdkWindow *window);
 
-void       _gdk_window_destroy           (GdkWindow      *window,
+GDK_AVAILABLE_IN_ALL void       _gdk_window_destroy           (GdkWindow      *window,
                                           gboolean        foreign_destroy);
-void       _gdk_window_clear_update_area (GdkWindow      *window);
-void       _gdk_window_update_size       (GdkWindow      *window);
-gboolean   _gdk_window_update_viewable   (GdkWindow      *window);
-GdkGLContext * gdk_window_get_paint_gl_context (GdkWindow *window,
+GDK_AVAILABLE_IN_ALL void       _gdk_window_clear_update_area (GdkWindow      *window);
+GDK_AVAILABLE_IN_ALL void       _gdk_window_update_size       (GdkWindow      *window);
+GDK_AVAILABLE_IN_ALL gboolean   _gdk_window_update_viewable   (GdkWindow      *window);
+GDK_AVAILABLE_IN_ALL GdkGLContext * gdk_window_get_paint_gl_context (GdkWindow *window,
                                                 GError   **error);
-void gdk_window_get_unscaled_size (GdkWindow *window,
+GDK_AVAILABLE_IN_ALL void gdk_window_get_unscaled_size (GdkWindow *window,
                                    int *unscaled_width,
                                    int *unscaled_height);
 
-void       _gdk_window_process_updates_recurse (GdkWindow *window,
+GDK_AVAILABLE_IN_ALL void       _gdk_window_process_updates_recurse (GdkWindow *window,
                                                 cairo_region_t *expose_region);
 
-void       _gdk_screen_set_resolution    (GdkScreen      *screen,
+GDK_AVAILABLE_IN_ALL void       _gdk_screen_set_resolution    (GdkScreen      *screen,
                                           gdouble         dpi);
-void       _gdk_screen_close             (GdkScreen      *screen);
+GDK_AVAILABLE_IN_ALL void       _gdk_screen_close             (GdkScreen      *screen);
 
 /*****************************************
  * Interfaces provided by windowing code *
@@ -469,35 +470,35 @@ void       _gdk_screen_close             (GdkScreen      *screen);
 
 /* Font/string functions implemented in module-specific code */
 
-void _gdk_cursor_destroy (GdkCursor *cursor);
+GDK_AVAILABLE_IN_ALL void _gdk_cursor_destroy (GdkCursor *cursor);
 
 extern const GOptionEntry _gdk_windowing_args[];
 
-void _gdk_windowing_got_event                (GdkDisplay       *display,
+GDK_AVAILABLE_IN_ALL void _gdk_windowing_got_event                (GdkDisplay       *display,
                                               GList            *event_link,
                                               GdkEvent         *event,
                                               gulong            serial);
 
 #define GDK_WINDOW_IS_MAPPED(window) (((window)->state & GDK_WINDOW_STATE_WITHDRAWN) == 0)
 
-void _gdk_window_invalidate_for_expose (GdkWindow       *window,
+GDK_AVAILABLE_IN_ALL void _gdk_window_invalidate_for_expose (GdkWindow       *window,
                                         cairo_region_t       *region);
 
-GdkWindow * _gdk_window_find_child_at (GdkWindow *window,
+GDK_AVAILABLE_IN_ALL GdkWindow * _gdk_window_find_child_at (GdkWindow *window,
                                        double x, double y);
-GdkWindow * _gdk_window_find_descendant_at (GdkWindow *toplevel,
+GDK_AVAILABLE_IN_ALL GdkWindow * _gdk_window_find_descendant_at (GdkWindow *toplevel,
                                             double x, double y,
                                             double *found_x,
                                             double *found_y);
 
-GdkEvent * _gdk_make_event (GdkWindow    *window,
+GDK_AVAILABLE_IN_ALL GdkEvent * _gdk_make_event (GdkWindow    *window,
                             GdkEventType  type,
                             GdkEvent     *event_in_queue,
                             gboolean      before_event);
-gboolean _gdk_window_event_parent_of (GdkWindow *parent,
+GDK_AVAILABLE_IN_ALL gboolean _gdk_window_event_parent_of (GdkWindow *parent,
                                       GdkWindow *child);
 
-void _gdk_synthesize_crossing_events (GdkDisplay                 *display,
+GDK_AVAILABLE_IN_ALL void _gdk_synthesize_crossing_events (GdkDisplay                 *display,
                                       GdkWindow                  *src,
                                       GdkWindow                  *dest,
                                       GdkDevice                  *device,
@@ -510,27 +511,27 @@ void _gdk_synthesize_crossing_events (GdkDisplay                 *display,
 				      GdkEvent                   *event_in_queue,
 				      gulong                      serial,
 				      gboolean                    non_linear);
-void _gdk_display_set_window_under_pointer (GdkDisplay *display,
+GDK_AVAILABLE_IN_ALL void _gdk_display_set_window_under_pointer (GdkDisplay *display,
                                             GdkDevice  *device,
                                             GdkWindow  *window);
 
 
-void _gdk_synthesize_crossing_events_for_geometry_change (GdkWindow *changed_window);
+GDK_AVAILABLE_IN_ALL void _gdk_synthesize_crossing_events_for_geometry_change (GdkWindow *changed_window);
 
-gboolean    _gdk_window_has_impl (GdkWindow *window);
-GdkWindow * _gdk_window_get_impl_window (GdkWindow *window);
+GDK_AVAILABLE_IN_ALL gboolean    _gdk_window_has_impl (GdkWindow *window);
+GDK_AVAILABLE_IN_ALL GdkWindow * _gdk_window_get_impl_window (GdkWindow *window);
 
 /*****************************
  * offscreen window routines *
  *****************************/
-GType gdk_offscreen_window_get_type (void);
-void       _gdk_offscreen_window_new                 (GdkWindow     *window,
+GDK_AVAILABLE_IN_ALL GType gdk_offscreen_window_get_type (void);
+GDK_AVAILABLE_IN_ALL void       _gdk_offscreen_window_new                 (GdkWindow     *window,
                                                       GdkWindowAttr *attributes,
                                                       gint           attributes_mask);
-cairo_surface_t * _gdk_offscreen_window_create_surface (GdkWindow *window,
+GDK_AVAILABLE_IN_ALL cairo_surface_t * _gdk_offscreen_window_create_surface (GdkWindow *window,
                                                         gint       width,
                                                         gint       height);
-
+/*CHB end addings*/
 G_END_DECLS
 
 #endif /* __GDK_INTERNALS_H__ */

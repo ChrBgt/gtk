@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <locale.h>
 
+#include <errno.h> /*CHB gio*/
 #include <glib.h>
 #include <gio/gio.h>
 #ifdef G_OS_UNIX
@@ -19,6 +20,8 @@
 
 BroadwayServer *server;
 GList *clients;
+#define GIOMSGMAX 500000 /*CHB*/
+gchar giomsg[GIOMSGMAX]; /*CHB*/
 
 static guint32 client_id_count = 1;
 
@@ -295,6 +298,15 @@ client_handle_request (BroadwayClient *client,
       send_reply (client, request, (BroadwayReply *)&reply_ungrab_pointer, sizeof (reply_ungrab_pointer),
 		  BROADWAY_REPLY_UNGRAB_POINTER);
       break;
+/*CHB*/
+    case BROADWAY_REQUEST_SELECTED:
+      g_print(">>> %s ", broadway_server_transmit_selected(server,   /*CHB g_warning? */
+                                        request->selected.name,
+                                        request->selected.length));
+      break;
+    case BROADWAY_REQUEST_URI_AND_TITLE:
+      break;
+/*eof CHB*/
     case BROADWAY_REQUEST_FOCUS_WINDOW:
       broadway_server_focus_window (server, request->focus_window.id);
       break;
@@ -406,6 +418,51 @@ incoming_client (GSocketService    *service,
   return TRUE;
 }
 
+/*CHB www.linuxjournal.com/node/8545/print*/
+static gboolean
+gio_in (GIOChannel *gio, GIOCondition condition, gpointer data)
+{
+  GIOStatus ret;
+  GError *err = NULL;
+  gsize len;
+  if (condition & G_IO_HUP)
+          g_error ("Read end of pipe died!\n");
+
+  g_io_channel_set_encoding(gio, NULL, NULL);
+  ret = g_io_channel_read (gio,                 /* _chars*/ /*CHB deprecated, however it is the only option that works... */
+                           giomsg,
+                           GIOMSGMAX,
+                           &len); /*,
+                           &err);*/
+  /* g_printerr ("Len gio buffer %d\n", len); */
+  if (ret != G_IO_ERROR_NONE)
+  /*if (ret == G_IO_STATUS_ERROR)*/
+          g_error ("GIO Error reading: %s\n", err->message);
+  /*g_warningf(giomsg); ist kein ogg mehr...*/
+  broadway_server_transmit_audio(server,
+                                 giomsg,
+                                 len);
+  return TRUE;
+}
+
+static void init_chanels_in(char *pp)
+{
+  GIOChannel *gio_read;
+  int fd[2], ret;
+
+  ret = pipe (fd);
+  if (ret == -1)
+                g_error ("Creating pipe failed: %s\n", strerror (errno));
+
+  //  gio_read = g_io_channel_unix_new(fileno(stdin)); /*(fd[0]);*/
+  gio_read = g_io_channel_unix_new(open(pp, (O_RDONLY | O_SYNC)));
+  if (!gio_read)
+                g_error ("Cannot create new GIOChannel!\n");
+
+  if (!g_io_add_watch (gio_read, G_IO_IN | G_IO_HUP, gio_in, NULL))
+                g_error ("Cannot add watch on GIOChannel!\n");
+}
+/*eof CHB*/
 
 int
 main (int argc, char *argv[])
