@@ -489,6 +489,16 @@ _gtk_toggle_button_set_active (GtkToggleButton *toggle_button,
 
 }
 
+//CHB added
+void
+gtk_toggle_button_set_active_simple (GtkToggleButton *toggle_button,
+                                     gboolean         is_active)
+{
+  g_return_if_fail (GTK_IS_TOGGLE_BUTTON (toggle_button));
+  _gtk_toggle_button_set_active (toggle_button, is_active);
+}
+//eof CHB
+
 /**
  * gtk_toggle_button_get_active:
  * @toggle_button: a #GtkToggleButton.
