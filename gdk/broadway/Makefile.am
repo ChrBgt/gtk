@@ -17,18 +17,29 @@ AM_CPPFLAGS =				\
 
 LDADDS = $(GDK_DEP_LIBS) -lrt
 
-noinst_LTLIBRARIES = libgdk-broadway.la
+## CHB
+##noinst_LTLIBRARIES = libgdk-broadway.la
+lib_LTLIBRARIES = libgdk-broadway.la
 
 bin_PROGRAMS = broadwayd
 
 libgdkinclude_HEADERS = 	\
 	gdkbroadway.h
 
-libgdkbroadwayinclude_HEADERS = 	\
+#CHB ab 5. eingefuegt, Achtung: es sind nicht alle headers dabei!
+libgdkbroadwayinclude_HEADERS =         \
 	gdkbroadwaydisplay.h		\
 	gdkbroadwaywindow.h		\
 	gdkbroadwaycursor.h		\
-	gdkbroadwayvisual.h
+	gdkbroadwayvisual.h	\
+	gdkbroadway-server.h	\
+	gdkdevice-broadway.h	\
+	gdkdevicemanager-broadway.h	\
+	gdkdisplay-broadway.h	\
+	gdkeventsource.h	\
+	gdkprivate-broadway.h	\
+	gdkscreen-broadway.h	\
+	gdkwindow-broadway.h
 
 EXTRA_DIST += toarray.pl
 

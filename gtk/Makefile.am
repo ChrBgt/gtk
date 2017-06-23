@@ -17,6 +17,8 @@ AM_CPPFLAGS =						\
 	-I$(top_builddir)				\
 	-I$(top_builddir)/gtk				\
 	-I$(top_srcdir) 				\
+	-I$(top_srcdir) -I../gdk			\
+	-I$(top_srcdir) -I../gdk/broadway		\
 	-I$(top_srcdir)/gdk				\
 	$(GMODULE_CFLAGS)				\
 	$(GTK_DEBUG_FLAGS)				\
@@ -64,11 +66,14 @@ install-ms-lib:
 uninstall-ms-lib:
 endif
 
+#CHB 2x broadway added
 libadd = 				\
+	$(top_builddir)/gdk/broadway/libgdk-broadway.la	\
 	$(top_builddir)/gdk/libgdk-3.la	\
 	$(GMODULE_LIBS) 		\
 	$(GTK_DEP_LIBS)
 deps = 					\
+	$(top_builddir)/gdk/broadway/libgdk-broadway.la	\
 	$(top_builddir)/gdk/libgdk-3.la
 
 # libtool stuff: set version and export symbols for resolving
@@ -1285,6 +1290,11 @@ libgtk_3_la_LDFLAGS += -Wl,-luuid $(gtk_win32_res_ldflag)
 libgtk_3_la_DEPENDENCIES += $(gtk_win32_res)
 endif
 
+#CHB
+if USE_BROADWAY
+libgtk_3_la_LIBADD += ../gdk/broadway/libgdk-broadway.la
+endif # USE_BROADWAY
+
 install-exec-hook:
 if DISABLE_EXPLICIT_DEPS
 	$(SHELL) $(top_srcdir)/sanitize-la.sh $(DESTDIR)$(libdir)/libgtk-3.la
@@ -1360,9 +1370,11 @@ endif
 
 include $(INTROSPECTION_MAKEFILE)
 INTROSPECTION_SCANNER_ENV = CC="$(CC)"
+#CHB broadway 2x added
 INTROSPECTION_COMPILER_ARGS = \
 	--includedir=$(srcdir) \
 	--includedir=. \
+	--includedir=../gdk/broadway	\
 	--includedir=../gdk
 
 Gtk-3.0.gir: $(INTROSPECTION_SCANNER) libgtk-3.la $(top_builddir)/gdk/Gdk-3.0.gir Makefile
@@ -1402,9 +1414,11 @@ bin_PROGRAMS = \
 	gtk-builder-tool \
 	gtk-launch
 
+#CHB broadway 4x added
 gtk_query_immodules_3_0_SOURCES = queryimmodules.c
 gtk_query_immodules_3_0_LDADD = 		\
 	libgtk-3.la				\
+	$(top_builddir)/gdk/broadway/libgdk-broadway.la	\
 	$(top_builddir)/gdk/libgdk-3.la		\
 	$(GMODULE_LIBS)				\
 	$(GTK_DEP_LIBS)
@@ -1415,18 +1429,21 @@ gtk_update_icon_cache_LDADD = $(GDK_PIXBUF_LIBS)
 gtk_encode_symbolic_svg_SOURCES = encodesymbolic.c
 gtk_encode_symbolic_svg_LDADD =			\
 	$(GDK_PIXBUF_LIBS)			\
+	$(top_builddir)/gdk/broadway/libgdk-broadway.la	\
 	$(top_builddir)/gdk/libgdk-3.la		\
 	$(GTK_DEP_LIBS)
 
 gtk_builder_tool_SOURCES = gtk-builder-tool.c
 gtk_builder_tool_LDADD =			\
 	libgtk-3.la				\
+	$(top_builddir)/gdk/broadway/libgdk-broadway.la	\
 	$(top_builddir)/gdk/libgdk-3.la		\
 	$(GTK_DEP_LIBS)
 
 gtk_launch_SOURCES = gtk-launch.c
 gtk_launch_LDADD =				\
 	libgtk-3.la				\
+	$(top_builddir)/gdk/broadway/libgdk-broadway.la	\
 	$(top_builddir)/gdk/libgdk-3.la		\
 	$(GTK_DEP_LIBS)
 

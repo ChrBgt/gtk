@@ -30,6 +30,9 @@ if OS_LINUX
 fontconfig_programs = testfontchooserdialog
 endif
 
+#CHB under testframe:   deleted following line
+#        $(fontconfig_programs)  ACHTUNG: NOCH NICHT DURCHGEFUEHRT!!   TODO
+
 noinst_PROGRAMS =  $(TEST_PROGS)	\
 	overlayscroll			\
 	syncscroll			\
