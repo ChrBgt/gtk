@@ -132,6 +132,8 @@
 
 #include "a11y/gtkaccessibility.h"
 
+#include "broadway/gdkbroadway.h" //CHB
+
 /* Private type definitions
  */
 typedef struct _GtkKeySnooperData        GtkKeySnooperData;
@@ -2661,3 +2663,11 @@ _gtk_propagate_captured_event (GtkWidget *widget,
 {
   return propagate_event (widget, event, TRUE, topmost);
 }
+
+//CHB
+void
+gtk_disseminate_uri_and_title (GdkDisplay *display, const gchar *uri, const gchar *title)
+{
+	GDK_DISPLAY_GET_CLASS(display)->disseminate_uri_and_title (display, uri, title);
+}
+//eof CHB
