@@ -345,6 +345,28 @@ gdk_broadway_display_hide_keyboard (GdkBroadwayDisplay *display)
 
   _gdk_broadway_server_set_show_keyboard (display->server, FALSE);
 }
+/*CHB*/
+static void
+gdk_broadway_display_disseminate_text_property (GdkDisplay     *display,
+                                                const gchar    *text)
+{
+  GdkBroadwayDisplay *broadway_display;
+  broadway_display = GDK_BROADWAY_DISPLAY (display);
+g_print(">> %s", text);
+  _gdk_broadway_server_transmit_selected(broadway_display->server, text);
+}
+
+static void
+gdk_broadway_display_disseminate_uri_and_title (GdkDisplay     *display,
+                                                const gchar    *uri,
+												const gchar    *title)
+{
+  GdkBroadwayDisplay *broadway_display;
+  broadway_display = GDK_BROADWAY_DISPLAY (display);
+g_print(">> %s %s\n", uri, title);
+  _gdk_broadway_server_transmit_uri_and_title(broadway_display->server, uri, title);
+}
+/*eof CHB*/
 
 static void
 gdk_broadway_display_class_init (GdkBroadwayDisplayClass * class)
@@ -394,5 +416,7 @@ gdk_broadway_display_class_init (GdkBroadwayDisplayClass * class)
   display_class->convert_selection = _gdk_broadway_display_convert_selection;
   display_class->text_property_to_utf8_list = _gdk_broadway_display_text_property_to_utf8_list;
   display_class->utf8_to_string_target = _gdk_broadway_display_utf8_to_string_target;
+  display_class->disseminate_text_property = gdk_broadway_display_disseminate_text_property; /*CHB*/
+  display_class->disseminate_uri_and_title = gdk_broadway_display_disseminate_uri_and_title; /*CHB*/
 }
 

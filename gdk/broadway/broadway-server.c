@@ -27,6 +27,13 @@
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #endif
+
+/*CHB*/
+#include <gio/gio.h>
+gchar *giomsg;
+gsize giocount=0;
+/*eof CHB*/
+
 #ifdef HAVE_GIO_UNIX
 #include <gio/gunixsocketaddress.h>
 #endif
@@ -141,8 +148,8 @@ broadway_server_init (BroadwayServer *server)
 
   root = g_new0 (BroadwayWindow, 1);
   root->id = server->id_counter++;
-  root->width = 1024;
-  root->height = 768;
+  root->width = 1000; //CHB 1024;
+  root->height = 500; //CHB 768;
   root->visible = TRUE;
 
   server->root = root;
@@ -577,14 +584,14 @@ parse_input (BroadwayInput *input)
       is_mask = buf[1] & 0x80;
       data = buf + 2;
 
-      if (payload_len > 125)
+      if (payload_len == 126)
         {
           if (len < 4)
             return;
           payload_len = GUINT16_FROM_BE( *(guint16 *) data );
           data += 2;
         }
-      else if (payload_len > 126)
+      else if (payload_len == 127)
         {
           if (len < 10)
             return;
@@ -1193,6 +1200,14 @@ got_http_request_line (GInputStream *stream,
 {
   char *line;
 
+  /*CHB*/
+  char **lines;
+  int i;
+  char *p;
+  char *cookie=NULL;
+  char fname[101];
+  /*eof CHB*/
+
   line = g_data_input_stream_read_line_finish (G_DATA_INPUT_STREAM (stream), result, NULL, NULL);
   if (line == NULL)
     {
@@ -1201,7 +1216,38 @@ got_http_request_line (GInputStream *stream,
       return;
     }
   if (strlen (line) == 0)
+  {
+    /*CHB Cookie check: takes place here, and not in start_input(), in order not to disturb the session the cookie belongs to*/
+    if(0){
+      /*grab cookie out of the http header*/
+      lines = g_strsplit (request->request->str, "\n", 0);
+      for (i = 0; lines[i] != NULL; i++) {
+        if ((p = parse_line (lines[i], "Cookie"))){
+          cookie = p+4;  /* 4 is length of uid= */
+        }
+      }
+      if(1){
+        if (cookie == NULL) {
+          g_strfreev (lines);
+          send_error (request, 400, "Bad websocket request, missing cookie");
+          return;
+        } else {
+          /*check if user identified by cookie is allowed to use broadway under the chosen port; stop, if not*/
+          sprintf(fname, "%s%d%s%s%c", "/home/cb/", request->server->port, "/", cookie, '\0');
+          if(access( fname, F_OK ) == -1) {
+            /*no filename in port directory equivalent to cookie*/
+            /*reicht das Folgende fuer Abbruch??*/
+            g_strfreev (lines);
+            return;
+          }
+        }
+      }
+      g_strfreev (lines);
+    }
+    /*eof CHB*/
+		
     got_request (request);
+  } //CHB 
   else
     {
       /* Protect against overflow in request length */
@@ -1613,6 +1659,9 @@ broadway_server_window_update (BroadwayServer *server,
   g_assert (window->width == cairo_image_surface_get_width (surface));
   g_assert (window->height == cairo_image_surface_get_height (surface));
 
+  giocount=cairo_image_surface_get_stride (surface) * (window->height);  //CHB added
+
+  /*CHB
   buffer = broadway_buffer_create (window->width, window->height,
                                    cairo_image_surface_get_data (surface),
                                    cairo_image_surface_get_stride (surface));
@@ -1628,6 +1677,9 @@ broadway_server_window_update (BroadwayServer *server,
     broadway_buffer_destroy (window->buffer);
 
   window->buffer = buffer;
+  */
+  
+  giomsg = cairo_image_surface_get_data (surface); //CHB added
 }
 
 gboolean
@@ -1781,6 +1833,9 @@ broadway_server_open_surface (BroadwayServer *server,
 			      int width,
 			      int height)
 {
+  return NULL; //CHB
+
+  /* CHB
   BroadwayWindow *window;
   ShmSurfaceData *data;
   cairo_surface_t *surface;
@@ -1825,7 +1880,42 @@ broadway_server_open_surface (BroadwayServer *server,
   window->cached_surface = cairo_surface_reference (surface);
 
   return surface;
+  */
 }
+
+/*CHB*/
+gchar *
+broadway_server_transmit_selected(BroadwayServer *server,
+                                            char *name,
+                                             int length)
+{
+  void *ptr;
+  gsize size;
+
+  size = length * sizeof (gchar);  /*vorher guint32 und guchar*/
+  ptr = map_named_shm (name, size);
+printf(">pf> %s", (gchar *)ptr);
+  if(server->output){
+    broadway_output_transmit_selected (server->output,
+                                       (gchar *)ptr);  /*braucht es hier auch das window?*/
+    broadway_output_flush(server->output);/*ok?*/
+  }
+  return (gchar *)ptr;/*TODO auf void umbiegen*/
+}
+
+void
+broadway_server_transmit_audio(BroadwayServer *server,
+                               gchar *ptr,
+                               gsize size)
+{
+  if(server->output){
+    broadway_output_transmit_audio (server->output,
+                                    ptr,
+                                    size);
+    broadway_output_flush(server->output);
+  }
+}
+/*eof CHB*/
 
 guint32
 broadway_server_new_window (BroadwayServer *server,
@@ -1844,8 +1934,8 @@ broadway_server_new_window (BroadwayServer *server,
   if (x == 0 && y == 0 && !is_temp)
     {
       /* TODO: Better way to know if we should pick default pos */
-      window->x = 100;
-      window->y = 100;
+      window->x = 0; //CHB 100;
+      window->y = 0; //CHB 100;
     }
   window->width = width;
   window->height = height;

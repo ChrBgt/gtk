@@ -330,3 +330,24 @@ broadway_output_put_buffer (BroadwayOutput *output,
   g_object_unref (out);
   g_object_unref (out_mem);
 }
+
+/*CHB*/
+void broadway_output_transmit_selected (BroadwayOutput *output,
+                                        gchar *text)
+{
+  int length = 0;
+  if(text) length = strlen(text);
+  write_header (output, BROADWAY_OP_SELECTED);
+  append_uint16 (output, length);
+  g_string_append_len (output->buf, (gchar *)text, (gssize)length); /*gssize richtig? Signed...*/
+}
+
+void broadway_output_transmit_audio (BroadwayOutput *output,
+                                    gchar *ptr,
+                                    gsize size)
+{
+  write_header (output, BROADWAY_OP_AUDIO);
+  append_uint32 (output, size);
+  g_string_append_len (output->buf, ptr, size);
+}
+/*eof CHB*/

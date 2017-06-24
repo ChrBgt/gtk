@@ -239,7 +239,7 @@ function cmdSetTransientFor(id, parentId)
 function restackWindows() {
     for (var i = 0; i < stackingOrder.length; i++) {
 	var surface = stackingOrder[i];
-	surface.toplevelElement.style.zIndex = i;
+	surface.toplevelElement.style.zIndex = surface.id;//CHB i;
     }
 }
 
@@ -513,6 +513,7 @@ function decodeBuffer(context, oldData, w, h, data, debug)
 
 function cmdPutBuffer(id, w, h, compressed)
 {
+	/* CHB
     var surface = surfaces[id];
     var context = surface.canvas.getContext("2d");
 
@@ -526,6 +527,7 @@ function cmdPutBuffer(id, w, h, compressed)
         imageData = decodeBuffer (context, surface.imageData, w, h, data, false);
 
     surface.imageData = imageData;
+	*/
 }
 
 function cmdGrabPointer(id, ownerEvents)
@@ -540,6 +542,12 @@ function cmdUngrabPointer()
     if (grab.window)
 	doUngrab();
 }
+
+//CHB
+var touchIdCnt=1;
+var audio_context;
+var audio_time=0.0;
+//eof CHB
 
 var active = false;
 function handleCommands(cmd)
@@ -635,10 +643,39 @@ function handleCommands(cmd)
 	    cmdUngrabPointer();
 	    break;
 
-        case 'k': // show keyboard
-            showKeyboard = cmd.get_16() != 0;
-            showKeyboardChanged = true;
+    case 'J': //CHB
+            window.prompt("Copy to clipboard: Ctrl+C, Enter", cmd.get_text());
             break;
+
+    case 'A': //CHB
+        var a_blob = cmd.get_a();
+        var f_read = new FileReader();
+        var a_buffer = audio_context.createBuffer(1, a_blob.size, 22050);//  11025
+
+        f_read.onload = function(event){
+          var i_array = new Int8Array(f_read.result); // Int8Array
+          var fl_array = new Float32Array(i_array.length);
+          for(k=0;k<i_array.length;k++){fl_array[k]=i_array[k]/128;}
+          a_buffer.getChannelData(0).set(fl_array);
+          if(audio_time==0||audio_time<audio_context.currentTime){
+            audio_time=audio_context.currentTime;
+          }
+ 
+          var c_duration = (a_buffer.duration);
+          var a_source = audio_context.createBufferSource();
+          a_source.buffer = a_buffer;
+          a_source.connect(audio_context.destination);
+          a_source.start(audio_time);
+          audio_time = audio_time+c_duration;
+        };
+		
+        f_read.readAsArrayBuffer(a_blob);
+        break;
+
+    case 'k': // show keyboard
+        showKeyboard = cmd.get_16() != 0;
+        showKeyboardChanged = true;
+        break;
 
 	default:
 	    alert("Unknown op " + command);
@@ -664,6 +701,22 @@ function BinCommands(message) {
     this.length = this.u8.length;
     this.pos = 0;
 }
+
+//CHB
+BinCommands.prototype.get_text = function() {
+    var length = this.get_16();
+    var str = String.fromCharCode.apply(null, this.u8.subarray(this.pos, this.pos+length));//apply could lead to trouble if length too large... TODO
+    this.pos = this.pos + length;
+    return decodeURIComponent(escape(str));
+};
+
+BinCommands.prototype.get_a = function() {
+    var size = this.get_32();
+    var a_blob = new Blob ([new DataView (this.arraybuffer, this.pos, size)], {type:"audio/x-raw, width=8"});
+    this.pos = this.pos + size;
+    return a_blob;
+};
+//eof CHB
 
 BinCommands.prototype.get_char = function() {
     return String.fromCharCode(this.u8[this.pos++]);
@@ -708,7 +761,7 @@ function handleMessage(message)
 {
     var cmd = new BinCommands(message);
     outstandingCommands.push(cmd);
-    if (outstandingCommands.length == 1) {
+    if (outstandingCommands.length == 1) { /*CHB evtl auch >=1 */
 	handleOutstanding();
     }
 }
@@ -753,7 +806,7 @@ function getPositionsFromAbsCoord(absX, absY, relativeId) {
 
 function getPositionsFromEvent(ev, relativeId) {
     var absX, absY;
-    absX = ev.pageX;
+    absX = ev.pageX * 1.005; //CHB correction factor added  Chrome: 1.008
     absY = ev.pageY;
     var res = getPositionsFromAbsCoord(absX, absY, relativeId);
 
@@ -2317,7 +2370,7 @@ function getKeysym(ev) {
 function copyKeyEvent(ev) {
     var members = ['type', 'keyCode', 'charCode', 'which',
 		   'altKey', 'ctrlKey', 'shiftKey',
-		   'keyLocation', 'keyIdentifier'], i, obj = {};
+		   'keyLocation', 'key'], i, obj = {}; //CHB keyIdentifier deprecated, use key instead
     for (i = 0; i < members.length; i++) {
 	if (typeof ev[members[i]] !== "undefined")
 	    obj[members[i]] = ev[members[i]];
@@ -2485,8 +2538,14 @@ function onTouchStart(ev) {
 
     updateKeyboardStatus();
     updateForEvent(ev);
-
-    for (var i = 0; i < ev.changedTouches.length; i++) {
+			
+    //for (var i = 0; i < ev.changedTouches.length; i++) { CHB
+	//CHB
+    if(ev.changedTouches.length > 1)
+        return;
+    else {
+        var i = 0;
+		//eof CHB
         var touch = ev.changedTouches.item(i);
 
         var origId = getSurfaceId(touch);
@@ -2495,7 +2554,7 @@ function onTouchStart(ev) {
         var isEmulated = 0;
 
         if (firstTouchDownId == null) {
-            firstTouchDownId = touch.identifier;
+			firstTouchDownId = touchIdCnt; //CHB  touch.identifier;
             isEmulated = 1;
 
             if (realWindowWithMouse != origId || id != windowWithMouse) {
@@ -2505,12 +2564,24 @@ function onTouchStart(ev) {
 
                 windowWithMouse = id;
                 realWindowWithMouse = origId;
-
+				
                 sendInput ("e", [origId, id, pos.rootX, pos.rootY, pos.winX, pos.winY, lastState, GDK_CROSSING_NORMAL]);
             }
+			
+			
+			//CHB ipad hack
+            sendInput ("t", [1, id,
+                             touchIdCnt-1,
+                             isEmulated, pos.rootX, pos.rootY, pos.winX, pos.winY, lastState]);
+            sendInput ("t", [2, id,
+                             touchIdCnt-1,
+                             isEmulated, pos.rootX, pos.rootY, pos.winX, pos.winY, lastState]);
+            //eof CHB
         }
 
-        sendInput ("t", [0, id, touch.identifier, isEmulated, pos.rootX, pos.rootY, pos.winX, pos.winY, lastState]);
+        sendInput ("t", [0, id, 
+						 touchIdCnt, //CHB touch.identifier,
+						 isEmulated, pos.rootX, pos.rootY, pos.winX, pos.winY, lastState]);
     }
 }
 
@@ -2520,7 +2591,13 @@ function onTouchMove(ev) {
     updateKeyboardStatus();
     updateForEvent(ev);
 
-    for (var i = 0; i < ev.changedTouches.length; i++) {
+    //for (var i = 0; i < ev.changedTouches.length; i++) {
+    //CHB
+    if(ev.changedTouches.length > 1 || firstTouchDownId == null)
+        return;
+    else {
+        var i = 0;
+        //eof CHB
         var touch = ev.changedTouches.item(i);
 
         var origId = getSurfaceId(touch);
@@ -2528,11 +2605,13 @@ function onTouchMove(ev) {
         var pos = getPositionsFromEvent(touch, id);
 
         var isEmulated = 0;
-        if (firstTouchDownId == touch.identifier) {
+        if (firstTouchDownId == touchIdCnt) {  //CHB touch.identifier) {		
             isEmulated = 1;
         }
 
-        sendInput ("t", [1, id, touch.identifier, isEmulated, pos.rootX, pos.rootY, pos.winX, pos.winY, lastState]);
+        sendInput ("t", [1, id, 
+                         touchIdCnt, //CHB  touch.identifier,
+		                 isEmulated, pos.rootX, pos.rootY, pos.winX, pos.winY, lastState]);
     }
 }
 
@@ -2542,7 +2621,13 @@ function onTouchEnd(ev) {
     updateKeyboardStatus();
     updateForEvent(ev);
 
-    for (var i = 0; i < ev.changedTouches.length; i++) {
+    //for (var i = 0; i < ev.changedTouches.length; i++) {
+    //CHB
+    if(ev.changedTouches.length > 1 || firstTouchDownId == null)
+        return;
+    else {
+        var i = 0;
+        //eof CHB
         var touch = ev.changedTouches.item(i);
 
         var origId = getSurfaceId(touch);
@@ -2550,14 +2635,23 @@ function onTouchEnd(ev) {
         var pos = getPositionsFromEvent(touch, id);
 
         var isEmulated = 0;
-        if (firstTouchDownId == touch.identifier) {
+        if (firstTouchDownId == touchIdCnt) { //CHB touch.identifier) {
             isEmulated = 1;
             firstTouchDownId = null;
         }
 
-        sendInput ("t", [2, id, touch.identifier, isEmulated, pos.rootX, pos.rootY, pos.winX, pos.winY, lastState]);
+        sendInput ("t", [2, id, 
+                         touchIdCnt, //CHB touch.identifier,
+                         isEmulated, pos.rootX, pos.rootY, pos.winX, pos.winY, lastState]);
+                
+		if (firstTouchDownId == null) touchIdCnt++; //CHB
     }
 }
+
+//CHB
+function onTouchCancel(ev) {
+}
+//eof CHB
 
 function setupDocument(document)
 {
@@ -2577,6 +2671,7 @@ function setupDocument(document)
       document.addEventListener('touchstart', onTouchStart, false);
       document.addEventListener('touchmove', onTouchMove, false);
       document.addEventListener('touchend', onTouchEnd, false);
+      document.addEventListener('touchcancel', onTouchCancel, false);//CHB
     } else if (document.attachEvent) {
       element.attachEvent("onmousewheel", onMouseWheel);
     }
@@ -2600,6 +2695,41 @@ function start()
 
 function connect()
 {
+	
+  /*CHB*/
+  //audio part
+  try {
+    audio_context = new (window.AudioContext || window.webkitAudioContext)();
+    console.log("audio context established");
+  } catch (e) {
+    alert("Web Audio API is not supported by this browser and/or its current config");
+  }
+  //userid part
+  window.onbeforeunload = function() {
+    if (window.XMLHttpRequest)
+      {// code for IE7+, Firefox, Chrome, Opera, Safari
+      xmlhttp=new XMLHttpRequest();
+      }
+    else
+      {// code for IE6, IE5
+      xmlhttp=new ActiveXObject('Microsoft.XMLHTTP');
+      }
+
+    // Handle ready state changes ( ignore them until readyState = 4 )
+    xmlhttp.onreadystatechange= function() { if (AJAX.readyState!=4) return false; }
+
+    //get userid
+    var cstring = document.cookie.split(';');
+    var userid = cstring[0].substring(4); //4 is length of uid=
+
+    // we're passing false so this is a syncronous request.
+    // The script will stall until the document has been loaded.
+    // the open statement depends on a global variable titled _userID.
+        // http to https
+    xmlhttp.open('GET', 'https://augtention.dedicated-hosting.ch:8079/cleanup?c='+userid, false);
+    xmlhttp.send(null);
+  }/*eof CHB*/
+
     var url = window.location.toString();
     var query_string = url.split("?");
     if (query_string.length > 1) {

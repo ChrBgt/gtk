@@ -26,7 +26,7 @@
 
 #include "gdkdndprivate.h"
 
-#include "gdkinternals.h"
+//#include "gdkinternals.h"  CHB  included twice
 #include "gdkproperty.h"
 #include "gdkprivate-broadway.h"
 #include "gdkinternals.h"

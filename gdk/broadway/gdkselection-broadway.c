@@ -136,7 +136,23 @@ _gdk_broadway_display_convert_selection (GdkDisplay *display,
 					 GdkAtom    target,
 					 guint32    time)
 {
-  g_warning ("convert_selection not implemented\n");
+  //g_warning ("convert_selection not implemented\n"); CHB
+  //CHB case 'no offer available' only; compare wayland
+  GdkEvent *event;
+
+  event = gdk_event_new (GDK_SELECTION_NOTIFY);
+  event->selection.window = g_object_ref (requestor);
+  event->selection.send_event = FALSE;
+  event->selection.selection = selection;
+  event->selection.target = target;
+  event->selection.property = GDK_NONE;
+  event->selection.time = GDK_CURRENT_TIME;
+  event->selection.requestor = g_object_ref (requestor);
+
+  gdk_event_put (event);
+  gdk_event_free (event);
+  return;
+  //eof CHB
 }
 
 gint

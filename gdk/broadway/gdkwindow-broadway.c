@@ -25,6 +25,8 @@
 
 #include "config.h"
 
+#include <sys/time.h> /*CHB*/
+
 #include "gdkwindow-broadway.h"
 #include "gdkscreen-broadway.h"
 
@@ -83,6 +85,14 @@ G_DEFINE_TYPE (GdkWindowImplBroadway,
 	       gdk_window_impl_broadway,
 	       GDK_TYPE_WINDOW_IMPL)
 
+//CHB
+static GdkWindowImplBroadway *main_impl=NULL;
+//postrun
+static gint postrun1 = 0;
+static gint postrun2 = 0;
+static gint postrun3 = 0;
+//eof CHB
+		   
 static GdkDisplay *
 find_broadway_display (void)
 {
@@ -110,12 +120,79 @@ update_dirty_windows_and_sync (void)
 {
   GList *l;
   GdkBroadwayDisplay *display;
-  gboolean updated_surface;
+  //gboolean updated_surface; CHB
+
+  //CHB
+  gint x=0, y=0, width=0, height=0;
+  GdkWindowImplBroadway *impl, *implshow=NULL;
+  cairo_surface_t *ns;
+  cairo_t *cr_ns;
+  //eof CHB
 
   display = GDK_BROADWAY_DISPLAY (find_broadway_display ());
   g_assert (display != NULL);
 
-  updated_surface = FALSE;
+  //updated_surface = FALSE; CHB
+  
+  //CHB
+
+  //Find main window, for hack below
+  if(!main_impl){
+    for (l = display->toplevels; l != NULL; l = l->next) {
+
+
+      main_impl = l->data;
+      if(main_impl && main_impl->wrapper && gdk_window_get_window_type(main_impl->wrapper)==GDK_WINDOW_TOPLEVEL)
+            implshow = main_impl;
+    }
+    main_impl = implshow; //mainimpl found, will never be searched again
+  }
+  impl = main_impl;
+
+  if(main_impl->wrapper) gdk_window_get_geometry(main_impl->wrapper, &x, &y, &width, &height);
+  ns = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width - x, height - y);
+  cr_ns = cairo_create(ns);
+
+  // mainimpl->dirty = FALSE;
+  if(main_impl->surface) {
+        cairo_surface_flush(main_impl->surface);
+    cairo_set_source_surface (cr_ns, main_impl->surface, x, y); //should be 0,0
+  }
+  cairo_paint (cr_ns);
+  
+  for (l = display->toplevels; l != NULL; l = l->next) {
+    impl = l->data;
+
+    if(impl && impl->wrapper //&& gdk_window_get_window_type(impl->wrapper)!=GDK_WINDOW_TOPLEVEL
+            && gdk_window_get_window_type(impl->wrapper)!=GDK_WINDOW_ROOT
+            && gdk_window_is_visible (impl->wrapper)
+            && impl->visible){
+          gdk_window_get_geometry(impl->wrapper, &x, &y, &width, &height);
+          impl->dirty = FALSE;
+
+          if(impl->surface && ((x>0 && y>0) || !(impl->transient_for))){
+            cairo_surface_flush(impl->surface);
+            cairo_set_source_surface (cr_ns, impl->surface, x, y);
+            cairo_paint (cr_ns);
+          }
+    }
+  }
+
+//  for (l = display->toplevels; l != NULL; l = l->next) {
+//    impl = l->data;
+
+  _gdk_broadway_server_window_update (display->server,
+                                      impl->id,
+                                      ns);
+//  } 
+//Achtung: hier keine Schleife heisst, dass an broadway.js nur das letzte Fenster per update gegeben wird... keine Aktualisierungen für die anderen fenster (obwohl die ja im frame mitkommen)
+//Evtl. die window update funktion verfeinern: statt ns auch null zulassen, dann werden die frame daten nur einmal rübergeschoben
+
+  cairo_destroy(cr_ns);
+  cairo_surface_destroy(ns);
+  //eof CHB
+  
+  /* CHB
   for (l = display->toplevels; l != NULL; l = l->next)
     {
       GdkWindowImplBroadway *impl = l->data;
@@ -129,12 +206,14 @@ update_dirty_windows_and_sync (void)
 					      impl->surface);
 	}
     }
-
+  */
+  
   /* We sync here to ensure all references to the impl->surface memory
      is done, as we may later paint new data in them. */
-  if (updated_surface)
+	 
+  //if (updated_surface) CHB   TODO welchen weglassen? gar keinen?
     gdk_display_sync (GDK_DISPLAY (display));
-  else
+  //else  CHB
     gdk_display_flush (GDK_DISPLAY (display));
 }
 
@@ -238,11 +317,73 @@ _gdk_broadway_screen_init_root_window (GdkScreen * screen)
   _gdk_window_update_size (broadway_screen->root_window);
 }
 
-static void
-on_frame_clock_after_paint (GdkFrameClock *clock,
-                            GdkWindow     *window)
+//CHB
+static gboolean
+remove_postrun_after_paint (gpointer pr)
+{
+  if(pr) { 
+    g_source_remove((gint)((ulong)pr));
+	if((gint)((ulong)pr) == postrun1) postrun1 = 0; 
+  }
+  
+  return  G_SOURCE_REMOVE;
+}
+
+static gboolean
+postrun_once_after_paint (GdkWindow *window)
+{
+  if(postrun3) {
+    update_dirty_windows_and_sync ();
+    postrun3 = g_timeout_add (60000, (GSourceFunc)postrun_once_after_paint , window); // 60000 30000
+  }
+
+  return  G_SOURCE_REMOVE;
+}
+
+static gboolean
+postrun_after_paint (GdkWindow *window)
 {
   update_dirty_windows_and_sync ();
+  return  G_SOURCE_CONTINUE; //alt: _REMOVE
+}
+//eof CHB
+
+static void
+on_frame_clock_after_paint (GdkFrameClock *clck, //CHB clock
+                            GdkWindow     *window)
+{
+  //CHB
+  GList *l;
+  GdkWindowImplBroadway *impl;
+  gboolean dirty = FALSE;
+  GdkBroadwayDisplay *display = GDK_BROADWAY_DISPLAY (gdk_display_get_default ());
+
+  for (l = display->toplevels; l != NULL; l = l->next) {
+    impl = l->data;
+	
+    if(impl->dirty && impl->visible)
+      dirty = TRUE;
+  }
+
+  if(dirty){
+    //remove open postruns
+    if(postrun1) { g_source_remove(postrun1); postrun1 = 0; }
+    if(postrun2) { g_source_remove(postrun2); postrun2 = 0; }
+    if(postrun3) { g_source_remove(postrun3); postrun3 = 0; }
+	
+    //eof CHB
+
+    update_dirty_windows_and_sync ();
+  
+    //CHB
+
+    //postrun
+    postrun1 = g_timeout_add (50, (GSourceFunc)postrun_after_paint , window); //150 100 200
+    postrun2 = g_timeout_add (20000, (GSourceFunc)remove_postrun_after_paint , (gpointer)((ulong)postrun1)); //50000 8000    1000 600   3000 6000   12000
+    postrun3 = g_timeout_add (21000, (GSourceFunc)postrun_once_after_paint , window); //51000   9000      60000 30000  120000
+  }
+  
+  //eof CHB
 }
 
 static void
@@ -288,7 +429,8 @@ _gdk_broadway_display_create_window_impl (GdkDisplay    *display,
 	    window->window_type == GDK_WINDOW_TEMP);
   g_assert (GDK_WINDOW_TYPE (window->parent) == GDK_WINDOW_ROOT);
 
-  broadway_display->toplevels = g_list_prepend (broadway_display->toplevels, impl);
+  //broadway_display->toplevels = g_list_prepend (broadway_display->toplevels, impl); CHB
+  broadway_display->toplevels = g_list_append (broadway_display->toplevels, impl);//CHB
 
   connect_frame_clock (window);
 }
@@ -1469,6 +1611,10 @@ gdk_broadway_window_begin_move_drag (GdkWindow *window,
   MoveResizeData *mv_resize;
   GdkWindowImplBroadway *impl;
 
+  //CHB Don't want windows to be moved at all
+  return;
+  //eof CHB
+
   impl = GDK_WINDOW_IMPL_BROADWAY (window->impl);
 
   if (GDK_WINDOW_DESTROYED (window) ||
@@ -1610,7 +1756,6 @@ gdk_window_impl_broadway_class_init (GdkWindowImplBroadwayClass *klass)
   impl_class->set_group = gdk_broadway_window_set_group;
   impl_class->set_decorations = gdk_broadway_window_set_decorations;
   impl_class->get_decorations = gdk_broadway_window_get_decorations;
-  impl_class->set_functions = gdk_broadway_window_set_functions;
   impl_class->set_functions = gdk_broadway_window_set_functions;
   impl_class->begin_resize_drag = gdk_broadway_window_begin_resize_drag;
   impl_class->begin_move_drag = gdk_broadway_window_begin_move_drag;

@@ -10,6 +10,7 @@
 #include <locale.h>
 
 #include <errno.h> /*CHB gio*/
+
 #include <glib.h>
 #include <gio/gio.h>
 #ifdef G_OS_UNIX
@@ -462,7 +463,7 @@ static void init_chanels_in(char *pp)
   if (!g_io_add_watch (gio_read, G_IO_IN | G_IO_HUP, gio_in, NULL))
                 g_error ("Cannot add watch on GIOChannel!\n");
 }
-/*eof CHB*/
+/*eof CHB*/	  
 
 int
 main (int argc, char *argv[])
@@ -473,12 +474,12 @@ main (int argc, char *argv[])
   GInetAddress *inet;
   GSocketAddress *address;
   GSocketService *listener;
-  char *path, *basename;
   char *http_address = NULL;
   char *unixsocket_address = NULL;
   int http_port = 0;
   char *ssl_cert = NULL;
   char *ssl_key = NULL;
+  char *pp = NULL; //CHB
   char *display;
   int port = 0;
   const GOptionEntry entries[] = {
@@ -489,6 +490,7 @@ main (int argc, char *argv[])
 #endif
     { "cert", 'c', 0, G_OPTION_ARG_STRING, &ssl_cert, "SSL certificate path", "PATH" },
     { "key", 'k', 0, G_OPTION_ARG_STRING, &ssl_key, "SSL key path", "PATH" },
+	{ "pp" , 's', 0, G_OPTION_ARG_STRING, &pp, "pp", "PATH" }, //CHB
     { NULL }
   };
 
@@ -528,19 +530,21 @@ main (int argc, char *argv[])
       port = strtol (display + strlen (":tcp"), NULL, 10);
 
       inet = g_inet_address_new_from_string ("127.0.0.1");
-      g_print ("Listening on 127.0.0.1:%d\n", port + 9090);
+//      g_print ("Listening on 127.0.0.1:%d\n", port + 9090); CHB
       address = g_inet_socket_address_new (inet, port + 9090);
       g_object_unref (inet);
     }
 #ifdef G_OS_UNIX
   else if (display[0] == ':' && g_ascii_isdigit(display[1]))
     {
+      char *path, *basename;
+
       port = strtol (display + strlen (":"), NULL, 10);
       basename = g_strdup_printf ("broadway%d.socket", port + 1);
       path = g_build_filename (g_get_user_runtime_dir (), basename, NULL);
       g_free (basename);
 
-      g_print ("Listening on %s\n", path);
+//      g_print ("Listening on %s\n", path); CHB
       address = g_unix_socket_address_new_with_type (path, -1,
 						     G_UNIX_SOCKET_ADDRESS_ABSTRACT);
       g_free (path);
@@ -588,6 +592,9 @@ main (int argc, char *argv[])
   g_socket_service_start (G_SOCKET_SERVICE (listener));
 
   loop = g_main_loop_new (NULL, FALSE);
+  
+  init_chanels_in (pp);/*CHB     evtl. spaeter nach broadway_server_ verlegen, dort die init fkt zusammenlegen  TODO*/
+
   g_main_loop_run (loop);
   
   return 0;

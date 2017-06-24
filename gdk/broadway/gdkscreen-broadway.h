@@ -68,10 +68,12 @@ struct _GdkBroadwayScreenClass
   void (* window_manager_changed) (GdkBroadwayScreen *screen);
 };
 
-GType       gdk_broadway_screen_get_type (void);
-GdkScreen * _gdk_broadway_screen_new      (GdkDisplay *display,
+/* CHB GDK_AVAILABLE_IN_ALL added */
+GDK_AVAILABLE_IN_ALL GType       gdk_broadway_screen_get_type (void);
+GDK_AVAILABLE_IN_ALL GdkScreen * _gdk_broadway_screen_new      (GdkDisplay *display,
 					   gint	  screen_number);
-void _gdk_broadway_screen_setup           (GdkScreen *screen);
+GDK_AVAILABLE_IN_ALL void _gdk_broadway_screen_setup           (GdkScreen *screen);
+/*eof added CHB*/
 
 G_END_DECLS
 

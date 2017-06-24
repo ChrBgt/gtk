@@ -190,8 +190,8 @@ gdk_broadway_screen_get_monitor_geometry (GdkScreen    *screen,
     {
       dest->x = 0;
       dest->y = 0;
-      dest->width = broadway_screen->width;
-      dest->height = broadway_screen->height;
+      dest->width = 1000; //CHB broadway_screen->width;
+      dest->height = 500; //CHB broadway_screen->height;
     }
 }
 

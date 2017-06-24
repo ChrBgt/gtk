@@ -3,13 +3,42 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>broadway 2.0</title>
+<title>augtention.com</title>
 <style type="text/css">
-body { overflow: hidden; }
+body#overlay { /*CHB overlay added; overflow: hidden;           TODO: is overflow still necessary? Eventually remove this style def */
+  overflow-x: hidden; /*CHB*/
+  overflow-y: hidden; /*CHB*/
+  /*CHB*/
+  margin: 0px;
+  padding: 0px;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  width: 1000px;
+  height: 500px;
+  z-index: 2147483647;
+  /*eof CHB*/
+}
+
+iframe#ifrm {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  border-style: none;
+  width: 1000px;
+  height: 500px;
+  overflow-x:hidden;
+  overflow-y:hidden;
+  margin-top: 0px;
+  margin-left: 0px;
+}/*CHB*/
 </style>
 <script type="text/javascript" src="broadway.js"></script>
 </head>
 
-<body onload="connect()">
+<body id="overlay" onload="connect()">
+<!-- CHB: http to https -->
+<iframe id="ifrm" src="https://augtention.dedicated-hosting.ch:8911" scrolling="no">Your browser doesn't support iframes</iframe>
+<!-- eof CHB -->
 </body>
 </html>
