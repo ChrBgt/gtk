@@ -37,8 +37,13 @@ iframe#ifrm {
 </head>
 
 <body id="overlay" onload="connect()">
-<!-- CHB: http to https -->
-<iframe id="ifrm" src="https://augtention.dedicated-hosting.ch:8911" scrolling="no">Your browser doesn't support iframes</iframe>
+<!-- CHB: iframe, port, http to https -->
+<iframe id="ifrm" src="https://augtention.dedicated-hosting.ch" scrolling="no">Your browser doesn't support iframes</iframe>
+<script>
+   var frm = document.getElementById('ifrm');
+   var prt = parseInt(window.location.port) + 1;
+   frm.src = window.location.protocol + '//' + window.location.hostname + ':' + prt.toString();
+</script>
 <!-- eof CHB -->
 </body>
 </html>
