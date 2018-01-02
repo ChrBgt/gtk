@@ -5,33 +5,25 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>augtention.com</title>
 <style type="text/css">
-body#overlay { /*CHB overlay added; overflow: hidden;           TODO: is overflow still necessary? Eventually remove this style def */
-  overflow-x: hidden; /*CHB*/
-  overflow-y: hidden; /*CHB*/
-  /*CHB*/
-  margin: 0px;
-  padding: 0px;
-  position: absolute;
-  top: 0px;
-  left: 0px;
-  width: 1000px;
-  height: 500px;
+body#overlay {
   z-index: 2147483647;
-  /*eof CHB*/
-}
+  margin-top: 0px;
+  margin-left: 0px;
+  margin-right: 0px;
+  margin-bottom: 0px;
+}/*CHB*/
 
 iframe#ifrm {
   position: absolute;
-  top: 0px;
-  left: 0px;
+/*  top: 0px;
+  left: 0px;*/
   border-style: none;
-  width: 1000px;
-  height: 500px;
   overflow-x:hidden;
   overflow-y:hidden;
-  margin-top: 0px;
-  margin-left: 0px;
+/*  margin-top: 0px;
+  margin-left: 0px;*/
 }/*CHB*/
+
 </style>
 <script type="text/javascript" src="broadway.js"></script>
 </head>
@@ -43,6 +35,8 @@ iframe#ifrm {
    var frm = document.getElementById('ifrm');
    var prt = parseInt(window.location.port) + 1;
    frm.src = window.location.protocol + '//' + window.location.hostname + ':' + prt.toString();
+   frm.width = window.innerWidth;
+   frm.height = window.innerHeight;
 </script>
 <!-- eof CHB -->
 </body>
