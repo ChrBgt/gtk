@@ -341,13 +341,4 @@ void broadway_output_transmit_selected (BroadwayOutput *output,
   append_uint16 (output, length);
   g_string_append_len (output->buf, (gchar *)text, (gssize)length); /*gssize richtig? Signed...*/
 }
-
-void broadway_output_transmit_audio (BroadwayOutput *output,
-                                    gchar *ptr,
-                                    gsize size)
-{
-  write_header (output, BROADWAY_OP_AUDIO);
-  append_uint32 (output, size);
-  g_string_append_len (output->buf, ptr, size);
-}
 /*eof CHB*/

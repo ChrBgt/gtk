@@ -67,5 +67,4 @@ void            broadway_output_set_show_keyboard (BroadwayOutput *output,
                                                    gboolean show);
 
 void            broadway_output_transmit_selected (BroadwayOutput *output, gchar *text);/*CHB*/
-void            broadway_output_transmit_audio  (BroadwayOutput *output, gchar *ptr, gsize size); /*CHB*/
 #endif /* __BROADWAY_H__ */

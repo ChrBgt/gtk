@@ -419,52 +419,6 @@ incoming_client (GSocketService    *service,
   return TRUE;
 }
 
-/*CHB www.linuxjournal.com/node/8545/print*/
-static gboolean
-gio_in (GIOChannel *gio, GIOCondition condition, gpointer data)
-{
-  GIOStatus ret;
-  GError *err = NULL;
-  gsize len;
-  if (condition & G_IO_HUP)
-          g_error ("Read end of pipe died!\n");
-
-  g_io_channel_set_encoding(gio, NULL, NULL);
-  ret = g_io_channel_read (gio,                 /* _chars*/ /*CHB deprecated, however it is the only option that works... */
-                           giomsg,
-                           GIOMSGMAX,
-                           &len); /*,
-                           &err);*/
-  /* g_printerr ("Len gio buffer %d\n", len); */
-  if (ret != G_IO_ERROR_NONE)
-  /*if (ret == G_IO_STATUS_ERROR)*/
-          g_error ("GIO Error reading: %s\n", err->message);
-  /*g_warningf(giomsg); ist kein ogg mehr...*/
-  broadway_server_transmit_audio(server,
-                                 giomsg,
-                                 len);
-  return TRUE;
-}
-
-static void init_chanels_in(char *pp)
-{
-  GIOChannel *gio_read;
-  int fd[2], ret;
-
-  ret = pipe (fd);
-  if (ret == -1)
-                g_error ("Creating pipe failed: %s\n", strerror (errno));
-
-  //  gio_read = g_io_channel_unix_new(fileno(stdin)); /*(fd[0]);*/
-  gio_read = g_io_channel_unix_new(open(pp, (O_RDONLY | O_SYNC)));
-  if (!gio_read)
-                g_error ("Cannot create new GIOChannel!\n");
-
-  if (!g_io_add_watch (gio_read, G_IO_IN | G_IO_HUP, gio_in, NULL))
-                g_error ("Cannot add watch on GIOChannel!\n");
-}
-/*eof CHB*/	  
-
 int
 main (int argc, char *argv[])
 {
@@ -479,7 +433,6 @@ main (int argc, char *argv[])
   int http_port = 0;
   char *ssl_cert = NULL;
   char *ssl_key = NULL;
-  char *pp = NULL; //CHB
   char *display;
   int port = 0;
   const GOptionEntry entries[] = {
@@ -490,7 +443,6 @@ main (int argc, char *argv[])
 #endif
     { "cert", 'c', 0, G_OPTION_ARG_STRING, &ssl_cert, "SSL certificate path", "PATH" },
     { "key", 'k', 0, G_OPTION_ARG_STRING, &ssl_key, "SSL key path", "PATH" },
-	{ "pp" , 's', 0, G_OPTION_ARG_STRING, &pp, "pp", "PATH" }, //CHB
     { NULL }
   };
 
@@ -593,8 +545,6 @@ main (int argc, char *argv[])
 
   loop = g_main_loop_new (NULL, FALSE);
   
-  init_chanels_in (pp);/*CHB     evtl. spaeter nach broadway_server_ verlegen, dort die init fkt zusammenlegen  TODO*/
-
   g_main_loop_run (loop);
   
   return 0;

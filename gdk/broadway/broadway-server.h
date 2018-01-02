@@ -78,7 +78,6 @@ gboolean            broadway_server_window_translate         (BroadwayServer   *
 							      gint              dy);
 cairo_surface_t   * broadway_server_create_surface           (int               width,
 							      int               height);
-void                broadway_server_init_chanels_out         (); /*CHB*/
 void                broadway_server_window_update            (BroadwayServer   *server,
 							      gint              id,
 							      cairo_surface_t  *surface);
@@ -102,9 +101,5 @@ gchar *
 broadway_server_transmit_selected(BroadwayServer *server,
                                             char *name,
                                              int length);
-void
-broadway_server_transmit_audio(BroadwayServer *server,
-                               gchar *ptr,
-                               gsize size);
 /*eof CHB*/
 #endif /* __BROADWAY_SERVER__ */

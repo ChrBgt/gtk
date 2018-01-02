@@ -148,8 +148,8 @@ broadway_server_init (BroadwayServer *server)
 
   root = g_new0 (BroadwayWindow, 1);
   root->id = server->id_counter++;
-  root->width = 1000; //CHB 1024;
-  root->height = 500; //CHB 768;
+  root->width = atoi(getenv("BROADWAY_W")); //CHB 1024;
+  root->height = atoi(getenv("BROADWAY_H")); //CHB 768;
   root->visible = TRUE;
 
   server->root = root;
@@ -1901,19 +1901,6 @@ printf(">pf> %s", (gchar *)ptr);
     broadway_output_flush(server->output);/*ok?*/
   }
   return (gchar *)ptr;/*TODO auf void umbiegen*/
-}
-
-void
-broadway_server_transmit_audio(BroadwayServer *server,
-                               gchar *ptr,
-                               gsize size)
-{
-  if(server->output){
-    broadway_output_transmit_audio (server->output,
-                                    ptr,
-                                    size);
-    broadway_output_flush(server->output);
-  }
 }
 /*eof CHB*/
 

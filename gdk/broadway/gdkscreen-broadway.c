@@ -32,6 +32,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+//CHB
+static int brwidth = 200;
+static int brheight = 100;
+//eof CHB
+
 static void   gdk_broadway_screen_dispose     (GObject *object);
 static void   gdk_broadway_screen_finalize    (GObject *object);
 
@@ -190,8 +195,8 @@ gdk_broadway_screen_get_monitor_geometry (GdkScreen    *screen,
     {
       dest->x = 0;
       dest->y = 0;
-      dest->width = 1000; //CHB broadway_screen->width;
-      dest->height = 500; //CHB broadway_screen->height;
+      dest->width = brwidth; //CHB broadway_screen->width;
+      dest->height = brheight; //CHB broadway_screen->height;
     }
 }
 
@@ -280,6 +285,11 @@ gdk_broadway_screen_class_init (GdkBroadwayScreenClass *klass)
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
   GdkScreenClass *screen_class = GDK_SCREEN_CLASS (klass);
 
+  //CHB
+  brwidth = atoi(getenv("BROADWAY_W"));
+  brheight = atoi(getenv("BROADWAY_H"));
+  //eof CHB
+  
   object_class->dispose = gdk_broadway_screen_dispose;
   object_class->finalize = gdk_broadway_screen_finalize;
 

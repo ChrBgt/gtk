@@ -43,8 +43,7 @@ typedef enum {
   BROADWAY_OP_DISCONNECTED = 'D',
   BROADWAY_OP_PUT_BUFFER = 'b',
   BROADWAY_OP_SET_SHOW_KEYBOARD = 'k',
-  BROADWAY_OP_SELECTED = 'J',  /*CHB*/
-  BROADWAY_OP_AUDIO = 'A' /*CHB*/
+  BROADWAY_OP_SELECTED = 'J'  /*CHB*/
 } BroadwayOpType;
 
 typedef struct {

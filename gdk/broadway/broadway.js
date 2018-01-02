@@ -108,6 +108,8 @@ var showKeyboard = false;
 var showKeyboardChanged = false;
 var firstTouchDownId = null;
 
+var scl=1.25; //CHB  Correction Factor needed? 1.006 (Crome 1.008) TODO
+
 var GDK_CROSSING_NORMAL = 0;
 var GDK_CROSSING_GRAB = 1;
 var GDK_CROSSING_UNGRAB = 2;
@@ -147,7 +149,10 @@ function getButtonMask (button) {
 
 function sendConfigureNotify(surface)
 {
-    sendInput("w", [surface.id, surface.x, surface.y, surface.width, surface.height]);
+    sendInput("w", [surface.id, Math.ceil(surface.x/scl), //CHB Math.ceil(.../scl)
+	                            Math.ceil(surface.y/scl), //CHB Math.ceil(.../scl)
+								Math.ceil(surface.width/scl), //CHB Math.ceil(.../scl)
+								Math.ceil(surface.height/scl)]); //CHB Math.ceil(.../scl)	
 }
 
 var positionIndex = 0;
@@ -543,11 +548,7 @@ function cmdUngrabPointer()
 	doUngrab();
 }
 
-//CHB
-var touchIdCnt=1;
-var audio_context;
-var audio_time=0.0;
-//eof CHB
+var touchIdCnt=1; //CHB
 
 var active = false;
 function handleCommands(cmd)
@@ -569,10 +570,10 @@ function handleCommands(cmd)
 
 	case 's': // create new surface
 	    id = cmd.get_16();
-	    x = cmd.get_16s();
-	    y = cmd.get_16s();
-	    w = cmd.get_16();
-	    h = cmd.get_16();
+	    x = Math.ceil(cmd.get_16s()*scl); //CHB Math.ceil(...*scl)
+	    y = Math.ceil(cmd.get_16s()*scl); //CHB Math.ceil(...*scl)
+	    w = Math.ceil(cmd.get_16()*scl); //CHB Math.ceil(...*scl)
+	    h = Math.ceil(cmd.get_16()*scl); //CHB Math.ceil(...*scl)
 	    var isTemp = cmd.get_bool();
 	    cmdCreateSurface(id, x, y, w, h, isTemp);
 	    break;
@@ -603,13 +604,13 @@ function handleCommands(cmd)
 	    var ops = cmd.get_flags();
 	    var has_pos = ops & 1;
 	    if (has_pos) {
-		x = cmd.get_16s();
-		y = cmd.get_16s();
+		x = Math.ceil(cmd.get_16s()*scl); //CHB Math.ceil(...*scl)
+		y = Math.ceil(cmd.get_16s()*scl); //CHB Math.ceil(...*scl)
 	    }
 	    var has_size = ops & 2;
 	    if (has_size) {
-		w = cmd.get_16();
-		h = cmd.get_16();
+		w = Math.ceil(cmd.get_16s()*scl); //CHB Math.ceil(...*scl)
+		h = Math.ceil(cmd.get_16s()*scl); //CHB Math.ceil(...*scl)
 	    }
 	    cmdMoveResizeSurface(id, has_pos, x, y, has_size, w, h);
 	    break;
@@ -626,8 +627,8 @@ function handleCommands(cmd)
 
 	case 'b': // Put image buffer
 	    id = cmd.get_16();
-	    w = cmd.get_16();
-	    h = cmd.get_16();
+	    w = Math.ceil(cmd.get_16s()*scl); //CHB Math.ceil(...*scl)
+	    h = Math.ceil(cmd.get_16s()*scl); //CHB Math.ceil(...*scl)
             var data = cmd.get_data();
             cmdPutBuffer(id, w, h, data);
             break;
@@ -644,32 +645,7 @@ function handleCommands(cmd)
 	    break;
 
     case 'J': //CHB
-            window.prompt("Copy to clipboard: Ctrl+C, Enter", cmd.get_text());
-            break;
-
-    case 'A': //CHB
-        var a_blob = cmd.get_a();
-        var f_read = new FileReader();
-        var a_buffer = audio_context.createBuffer(1, a_blob.size, 22050);//  11025
-
-        f_read.onload = function(event){
-          var i_array = new Int8Array(f_read.result); // Int8Array
-          var fl_array = new Float32Array(i_array.length);
-          for(k=0;k<i_array.length;k++){fl_array[k]=i_array[k]/128;}
-          a_buffer.getChannelData(0).set(fl_array);
-          if(audio_time==0||audio_time<audio_context.currentTime){
-            audio_time=audio_context.currentTime;
-          }
- 
-          var c_duration = (a_buffer.duration);
-          var a_source = audio_context.createBufferSource();
-          a_source.buffer = a_buffer;
-          a_source.connect(audio_context.destination);
-          a_source.start(audio_time);
-          audio_time = audio_time+c_duration;
-        };
-		
-        f_read.readAsArrayBuffer(a_blob);
+        window.prompt("Copy to clipboard: Ctrl+C, Enter", cmd.get_text());
         break;
 
     case 'k': // show keyboard
@@ -708,13 +684,6 @@ BinCommands.prototype.get_text = function() {
     var str = String.fromCharCode.apply(null, this.u8.subarray(this.pos, this.pos+length));//apply could lead to trouble if length too large... TODO
     this.pos = this.pos + length;
     return decodeURIComponent(escape(str));
-};
-
-BinCommands.prototype.get_a = function() {
-    var size = this.get_32();
-    var a_blob = new Blob ([new DataView (this.arraybuffer, this.pos, size)], {type:"audio/x-raw, width=8"});
-    this.pos = this.pos + size;
-    return a_blob;
 };
 //eof CHB
 
@@ -800,13 +769,13 @@ function getPositionsFromAbsCoord(absX, absY, relativeId) {
 	res.winX = res.winX - surface.x;
 	res.winY = res.winY - surface.y;
     }
-
+	
     return res;
 }
 
 function getPositionsFromEvent(ev, relativeId) {
     var absX, absY;
-    absX = ev.pageX * 1.005; //CHB correction factor added  Chrome: 1.008
+    absX = ev.pageX;
     absY = ev.pageY;
     var res = getPositionsFromAbsCoord(absX, absY, relativeId);
 
@@ -853,7 +822,11 @@ function onMouseMove (ev) {
     var id = getSurfaceId(ev);
     id = getEffectiveEventTarget (id);
     var pos = getPositionsFromEvent(ev, id);
-    sendInput ("m", [realWindowWithMouse, id, pos.rootX, pos.rootY, pos.winX, pos.winY, lastState]);
+    sendInput ("m", [realWindowWithMouse, id, Math.ceil(pos.rootX/scl), //CHB Math.ceil(.../scl)
+	                                          Math.ceil(pos.rootY/scl), //CHB Math.ceil(.../scl)
+											  Math.ceil(pos.winX/scl), //CHB Math.ceil(.../scl)
+											  Math.ceil(pos.winY/scl), //CHB Math.ceil(.../scl)
+											  lastState]);
 }
 
 function onMouseOver (ev) {
@@ -865,7 +838,11 @@ function onMouseOver (ev) {
     var pos = getPositionsFromEvent(ev, id);
     windowWithMouse = id;
     if (windowWithMouse != 0) {
-	sendInput ("e", [realWindowWithMouse, id, pos.rootX, pos.rootY, pos.winX, pos.winY, lastState, GDK_CROSSING_NORMAL]);
+	sendInput ("e", [realWindowWithMouse, id, Math.ceil(pos.rootX/scl), //CHB Math.ceil(.../scl)
+	                                          Math.ceil(pos.rootY/scl), //CHB Math.ceil(.../scl)
+											  Math.ceil(pos.winX/scl), //CHB Math.ceil(.../scl)
+											  Math.ceil(pos.winY/scl), //CHB Math.ceil(.../scl)
+											  lastState, GDK_CROSSING_NORMAL]);
     }
 }
 
@@ -877,7 +854,11 @@ function onMouseOut (ev) {
     var pos = getPositionsFromEvent(ev, id);
 
     if (id != 0) {
-	sendInput ("l", [realWindowWithMouse, id, pos.rootX, pos.rootY, pos.winX, pos.winY, lastState, GDK_CROSSING_NORMAL]);
+	sendInput ("l", [realWindowWithMouse, id, Math.ceil(pos.rootX/scl), //CHB Math.ceil(.../scl)
+	                                          Math.ceil(pos.rootY/scl), //CHB Math.ceil(.../scl)
+											  Math.ceil(pos.winX/scl), //CHB Math.ceil(.../scl)
+											  Math.ceil(pos.winY/scl), //CHB Math.ceil(.../scl)
+											  lastState, GDK_CROSSING_NORMAL]);
     }
     realWindowWithMouse = 0;
     windowWithMouse = 0;
@@ -889,10 +870,19 @@ function doGrab(id, ownerEvents, implicit) {
     if (windowWithMouse != id) {
 	if (windowWithMouse != 0) {
 	    pos = getPositionsFromAbsCoord(lastX, lastY, windowWithMouse);
-	    sendInput ("l", [realWindowWithMouse, windowWithMouse, pos.rootX, pos.rootY, pos.winX, pos.winY, lastState, GDK_CROSSING_GRAB]);
+	    sendInput ("l", [realWindowWithMouse, windowWithMouse, 
+		                                      Math.ceil(pos.rootX/scl), //CHB Math.ceil(.../scl)
+	                                          Math.ceil(pos.rootY/scl), //CHB Math.ceil(.../scl)
+											  Math.ceil(pos.winX/scl), //CHB Math.ceil(.../scl)
+											  Math.ceil(pos.winY/scl), //CHB Math.ceil(.../scl)
+											  lastState, GDK_CROSSING_GRAB]);
 	}
 	pos = getPositionsFromAbsCoord(lastX, lastY, id);
-	sendInput ("e", [realWindowWithMouse, id, pos.rootX, pos.rootY, pos.winX, pos.winY, lastState, GDK_CROSSING_GRAB]);
+	sendInput ("e", [realWindowWithMouse, id, Math.ceil(pos.rootX/scl), //CHB Math.ceil(.../scl)
+	                                          Math.ceil(pos.rootY/scl), //CHB Math.ceil(.../scl)
+											  Math.ceil(pos.winX/scl), //CHB Math.ceil(.../scl)
+											  Math.ceil(pos.winY/scl), //CHB Math.ceil(.../scl)
+											  lastState, GDK_CROSSING_GRAB]);
 	windowWithMouse = id;
     }
 
@@ -906,11 +896,21 @@ function doUngrab() {
     if (realWindowWithMouse != windowWithMouse) {
 	if (windowWithMouse != 0) {
 	    pos = getPositionsFromAbsCoord(lastX, lastY, windowWithMouse);
-	    sendInput ("l", [realWindowWithMouse, windowWithMouse, pos.rootX, pos.rootY, pos.winX, pos.winY, lastState, GDK_CROSSING_UNGRAB]);
+	    sendInput ("l", [realWindowWithMouse, windowWithMouse, 
+		                                      Math.ceil(pos.rootX/scl), //CHB Math.ceil(.../scl)
+	                                          Math.ceil(pos.rootY/scl), //CHB Math.ceil(.../scl)
+											  Math.ceil(pos.winX/scl), //CHB Math.ceil(.../scl)
+											  Math.ceil(pos.winY/scl), //CHB Math.ceil(.../scl)
+											  lastState, GDK_CROSSING_UNGRAB]);
 	}
 	if (realWindowWithMouse != 0) {
 	    pos = getPositionsFromAbsCoord(lastX, lastY, realWindowWithMouse);
-	    sendInput ("e", [realWindowWithMouse, realWindowWithMouse, pos.rootX, pos.rootY, pos.winX, pos.winY, lastState, GDK_CROSSING_UNGRAB]);
+	    sendInput ("e", [realWindowWithMouse, realWindowWithMouse, 
+		                                      Math.ceil(pos.rootX/scl), //CHB Math.ceil(.../scl)
+	                                          Math.ceil(pos.rootY/scl), //CHB Math.ceil(.../scl)
+											  Math.ceil(pos.winX/scl), //CHB Math.ceil(.../scl)
+											  Math.ceil(pos.winY/scl), //CHB Math.ceil(.../scl)
+											  lastState, GDK_CROSSING_UNGRAB]);
 	}
 	windowWithMouse = realWindowWithMouse;
     }
@@ -927,7 +927,11 @@ function onMouseDown (ev) {
     var pos = getPositionsFromEvent(ev, id);
     if (grab.window == null)
 	doGrab (id, false, true);
-    sendInput ("b", [realWindowWithMouse, id, pos.rootX, pos.rootY, pos.winX, pos.winY, lastState, button]);
+    sendInput ("b", [realWindowWithMouse, id, Math.ceil(pos.rootX/scl), //CHB Math.ceil(.../scl)
+	                                          Math.ceil(pos.rootY/scl), //CHB Math.ceil(.../scl)
+											  Math.ceil(pos.winX/scl), //CHB Math.ceil(.../scl)
+											  Math.ceil(pos.winY/scl), //CHB Math.ceil(.../scl)
+											  lastState, button]);
     return false;
 }
 
@@ -939,7 +943,11 @@ function onMouseUp (ev) {
     id = getEffectiveEventTarget (evId);
     var pos = getPositionsFromEvent(ev, id);
 
-    sendInput ("B", [realWindowWithMouse, id, pos.rootX, pos.rootY, pos.winX, pos.winY, lastState, button]);
+    sendInput ("B", [realWindowWithMouse, id, Math.ceil(pos.rootX/scl), //CHB Math.ceil(.../scl)
+	                                          Math.ceil(pos.rootY/scl), //CHB Math.ceil(.../scl)
+											  Math.ceil(pos.winX/scl), //CHB Math.ceil(.../scl)
+											  Math.ceil(pos.winY/scl), //CHB Math.ceil(.../scl)
+											  lastState, button]);
 
     if (grab.window != null && grab.implicit)
 	doUngrab();
@@ -2528,7 +2536,11 @@ function onMouseWheel(ev)
     var dir = 0;
     if (offset > 0)
 	dir = 1;
-    sendInput ("s", [realWindowWithMouse, id, pos.rootX, pos.rootY, pos.winX, pos.winY, lastState, dir]);
+    sendInput ("s", [realWindowWithMouse, id, Math.ceil(pos.rootX/scl), //CHB Math.ceil(.../scl)
+	                                          Math.ceil(pos.rootY/scl), //CHB Math.ceil(.../scl)
+											  Math.ceil(pos.winX/scl), //CHB Math.ceil(.../scl)
+											  Math.ceil(pos.winY/scl), //CHB Math.ceil(.../scl)
+											  lastState, dir]);
 
     return cancelEvent(ev);
 }
@@ -2559,29 +2571,50 @@ function onTouchStart(ev) {
 
             if (realWindowWithMouse != origId || id != windowWithMouse) {
                 if (id != 0) {
-                    sendInput ("l", [realWindowWithMouse, id, pos.rootX, pos.rootY, pos.winX, pos.winY, lastState, GDK_CROSSING_NORMAL]);
+                    sendInput ("l", [realWindowWithMouse, id, 
+					                          Math.ceil(pos.rootX/scl), //CHB Math.ceil(.../scl)
+	                                          Math.ceil(pos.rootY/scl), //CHB Math.ceil(.../scl)
+											  Math.ceil(pos.winX/scl), //CHB Math.ceil(.../scl)
+											  Math.ceil(pos.winY/scl), //CHB Math.ceil(.../scl)
+											  lastState, GDK_CROSSING_NORMAL]);
                 }
 
                 windowWithMouse = id;
                 realWindowWithMouse = origId;
 				
-                sendInput ("e", [origId, id, pos.rootX, pos.rootY, pos.winX, pos.winY, lastState, GDK_CROSSING_NORMAL]);
+                sendInput ("e", [origId, id,  Math.ceil(pos.rootX/scl), //CHB Math.ceil(.../scl)
+	                                          Math.ceil(pos.rootY/scl), //CHB Math.ceil(.../scl)
+											  Math.ceil(pos.winX/scl), //CHB Math.ceil(.../scl)
+											  Math.ceil(pos.winY/scl), //CHB Math.ceil(.../scl)
+											  lastState, GDK_CROSSING_NORMAL]);
             }
 			
 			
 			//CHB ipad hack
             sendInput ("t", [1, id,
                              touchIdCnt-1,
-                             isEmulated, pos.rootX, pos.rootY, pos.winX, pos.winY, lastState]);
+                             isEmulated, Math.ceil(pos.rootX/scl), //CHB Math.ceil(.../scl)
+	                                          Math.ceil(pos.rootY/scl), //CHB Math.ceil(.../scl)
+											  Math.ceil(pos.winX/scl), //CHB Math.ceil(.../scl)
+											  Math.ceil(pos.winY/scl), //CHB Math.ceil(.../scl)
+											  lastState]);
             sendInput ("t", [2, id,
                              touchIdCnt-1,
-                             isEmulated, pos.rootX, pos.rootY, pos.winX, pos.winY, lastState]);
+                             isEmulated, Math.ceil(pos.rootX/scl), //CHB Math.ceil(.../scl)
+	                                          Math.ceil(pos.rootY/scl), //CHB Math.ceil(.../scl)
+											  Math.ceil(pos.winX/scl), //CHB Math.ceil(.../scl)
+											  Math.ceil(pos.winY/scl), //CHB Math.ceil(.../scl)
+											  lastState]);
             //eof CHB
         }
 
         sendInput ("t", [0, id, 
 						 touchIdCnt, //CHB touch.identifier,
-						 isEmulated, pos.rootX, pos.rootY, pos.winX, pos.winY, lastState]);
+						 isEmulated, Math.ceil(pos.rootX/scl), //CHB Math.ceil(.../scl)
+	                                          Math.ceil(pos.rootY/scl), //CHB Math.ceil(.../scl)
+											  Math.ceil(pos.winX/scl), //CHB Math.ceil(.../scl)
+											  Math.ceil(pos.winY/scl), //CHB Math.ceil(.../scl)
+											  lastState]);
     }
 }
 
@@ -2611,7 +2644,11 @@ function onTouchMove(ev) {
 
         sendInput ("t", [1, id, 
                          touchIdCnt, //CHB  touch.identifier,
-		                 isEmulated, pos.rootX, pos.rootY, pos.winX, pos.winY, lastState]);
+		                 isEmulated, Math.ceil(pos.rootX/scl), //CHB Math.ceil(.../scl)
+	                                          Math.ceil(pos.rootY/scl), //CHB Math.ceil(.../scl)
+											  Math.ceil(pos.winX/scl), //CHB Math.ceil(.../scl)
+											  Math.ceil(pos.winY/scl), //CHB Math.ceil(.../scl)
+											  lastState]);
     }
 }
 
@@ -2642,7 +2679,11 @@ function onTouchEnd(ev) {
 
         sendInput ("t", [2, id, 
                          touchIdCnt, //CHB touch.identifier,
-                         isEmulated, pos.rootX, pos.rootY, pos.winX, pos.winY, lastState]);
+                         isEmulated, Math.ceil(pos.rootX/scl), //CHB Math.ceil(.../scl)
+	                                          Math.ceil(pos.rootY/scl), //CHB Math.ceil(.../scl)
+											  Math.ceil(pos.winX/scl), //CHB Math.ceil(.../scl)
+											  Math.ceil(pos.winY/scl), //CHB Math.ceil(.../scl)
+											  lastState]);
                 
 		if (firstTouchDownId == null) touchIdCnt++; //CHB
     }
@@ -2697,14 +2738,7 @@ function connect()
 {
 	
   /*CHB*/
-  //audio part
-  try {
-    audio_context = new (window.AudioContext || window.webkitAudioContext)();
-    console.log("audio context established");
-  } catch (e) {
-    alert("Web Audio API is not supported by this browser and/or its current config");
-  }
-  //userid part
+  //userid
   window.onbeforeunload = function() {
     if (window.XMLHttpRequest)
       {// code for IE7+, Firefox, Chrome, Opera, Safari
