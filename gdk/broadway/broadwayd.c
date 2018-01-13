@@ -301,9 +301,12 @@ client_handle_request (BroadwayClient *client,
       break;
 /*CHB*/
     case BROADWAY_REQUEST_SELECTED:
-      g_print(">>> %s ", broadway_server_transmit_selected(server,   /*CHB g_warning? */
+      //g_print(">>> %s ", broadway_server_transmit_selected(server,   /*CHB test */
+      //                                  request->selected.name,
+      //                                  request->selected.length));
+	  broadway_server_transmit_selected(server,
                                         request->selected.name,
-                                        request->selected.length));
+                                        request->selected.length);
       break;
     case BROADWAY_REQUEST_URI_AND_TITLE:
       break;

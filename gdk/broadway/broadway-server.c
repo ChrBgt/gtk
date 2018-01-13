@@ -1884,7 +1884,8 @@ broadway_server_open_surface (BroadwayServer *server,
 }
 
 /*CHB*/
-gchar *
+//gchar *   //CHB test
+void
 broadway_server_transmit_selected(BroadwayServer *server,
                                             char *name,
                                              int length)
@@ -1894,13 +1895,14 @@ broadway_server_transmit_selected(BroadwayServer *server,
 
   size = length * sizeof (gchar);  /*vorher guint32 und guchar*/
   ptr = map_named_shm (name, size);
-printf(">pf> %s", (gchar *)ptr);
+  //printf(">pf> %s", (gchar *)ptr); //CHB test
   if(server->output){
     broadway_output_transmit_selected (server->output,
                                        (gchar *)ptr);  /*braucht es hier auch das window?*/
     broadway_output_flush(server->output);/*ok?*/
   }
-  return (gchar *)ptr;/*TODO auf void umbiegen*/
+  //return (gchar *)ptr;//CHB test
+  return;
 }
 /*eof CHB*/
 

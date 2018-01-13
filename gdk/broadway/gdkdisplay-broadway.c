@@ -352,7 +352,7 @@ gdk_broadway_display_disseminate_text_property (GdkDisplay     *display,
 {
   GdkBroadwayDisplay *broadway_display;
   broadway_display = GDK_BROADWAY_DISPLAY (display);
-g_print(">> %s", text);
+  //g_print(">> %s", text);   //CHB test
   _gdk_broadway_server_transmit_selected(broadway_display->server, text);
 }
 
