@@ -1,4 +1,4 @@
-/* Helper functions for debugging */
+/* Helper functions for debugging  */
 var logDiv = null;
 function log(str) {
     if (!logDiv) {
