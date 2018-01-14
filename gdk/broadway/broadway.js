@@ -564,7 +564,7 @@ function handleCommands(cmd)
 	lastSerial = cmd.get_32();
 	switch (command) {
 	case 'D':
-	    alert ("disconnected");
+	    //alert ("disconnected"); //CHB test
 	    inputSocket = null;
 	    break;
 
@@ -2785,8 +2785,8 @@ function connect()
 	inputSocket = ws;
     };
     ws.onclose = function() {
-	if (inputSocket != null)
-	    alert ("disconnected");
+	//if (inputSocket != null)  //CHB test
+	//    alert ("disconnected");
 	inputSocket = null;
     };
     ws.onmessage = function(event) {

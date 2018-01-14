@@ -91,6 +91,7 @@ static GdkWindowImplBroadway *main_impl=NULL;
 static gint postrun1 = 0;
 static gint postrun2 = 0;
 static gint postrun3 = 0;
+static gint postrun_start = 2;
 //eof CHB
 		   
 static GdkDisplay *
@@ -378,7 +379,12 @@ on_frame_clock_after_paint (GdkFrameClock *clck, //CHB clock
     //CHB
 
     //postrun
-    postrun1 = g_timeout_add (50, (GSourceFunc)postrun_after_paint , window); //150 100 200
+	if (postrun_start > 0){
+ 	  postrun_start--;
+      postrun1 = g_timeout_add (1, (GSourceFunc)postrun_after_paint , window); //50 150 100 200
+	} else
+      postrun1 = g_timeout_add (50, (GSourceFunc)postrun_after_paint , window); //50 150 100 200
+  
     postrun2 = g_timeout_add (20000, (GSourceFunc)remove_postrun_after_paint , (gpointer)((ulong)postrun1)); //50000 8000    1000 600   3000 6000   12000
     postrun3 = g_timeout_add (21000, (GSourceFunc)postrun_once_after_paint , window); //51000   9000      60000 30000  120000
   }
