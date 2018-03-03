@@ -189,6 +189,7 @@ broadway_output_new_surface(BroadwayOutput *output,
 {
   write_header (output, BROADWAY_OP_NEW_SURFACE);
   append_uint16 (output, id);
+  append_uint16 (output, atoi(getenv("BROADWAY_SCL")));//CHB
   append_uint16 (output, x);
   append_uint16 (output, y);
   append_uint16 (output, w);

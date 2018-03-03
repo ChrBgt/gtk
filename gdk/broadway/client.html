@@ -7,15 +7,25 @@
 <style type="text/css">
 body#overlay {
   z-index: 2147483647;
+  position: absolute;
+  border-style: none;
+  text-align: left;
   margin-top: 0px;
   margin-left: 0px;
   margin-right: 0px;
   margin-bottom: 0px;
+  overflow-x:hidden;
+  overflow-y:hidden;
 }/*CHB*/
 
 iframe#ifrm {
   position: absolute;
   border-style: none;
+  text-align: left;
+  margin-top: 0px;
+  margin-left: 0px;
+  margin-right: 0px;
+  margin-bottom: 0px;
   overflow-x:hidden;
   overflow-y:hidden;
 }/*CHB*/
@@ -24,10 +34,14 @@ iframe#ifrm {
 <script type="text/javascript" src="broadway.js"></script>
 </head>
 
-<body id="overlay" onload="connect()">
+<body id="overlay"> <!--onload="initialize()" onclick="refocus()"> CHB: connect -> initialize; refocus added -->
 <!-- CHB: iframe, port, http to https -->
 <iframe id="ifrm" src="https://augtention.dedicated-hosting.ch" scrolling="no">Your browser doesn't support iframes</iframe>
 <script>
+   var ovl = document.getElementById('overlay');   
+   ovl.onclick = refocus;
+   ovl.onload = initialize;
+   
    var frm = document.getElementById('ifrm');
    var prt = parseInt(window.location.port) + 1;
    frm.src = window.location.protocol + '//' + window.location.hostname + ':' + prt.toString();

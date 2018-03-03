@@ -108,7 +108,8 @@ var showKeyboard = false;
 var showKeyboardChanged = false;
 var firstTouchDownId = null;
 
-var scl=1.25; //CHB  Correction Factor needed? 1.006 (Crome 1.008) TODO
+//var scl=1.25; //CHB  Correction Factor needed? 1.006 (Crome 1.008) TODO
+var scl=1.0;
 
 var GDK_CROSSING_NORMAL = 0;
 var GDK_CROSSING_GRAB = 1;
@@ -158,6 +159,16 @@ function sendConfigureNotify(surface)
 var positionIndex = 0;
 function cmdCreateSurface(id, x, y, width, height, isTemp)
 {
+	//CHB to avoid duplicated canvas generation
+	for (var i = 0; i < stackingOrder.length; i++) {
+	    var surface = stackingOrder[i];
+	    if(surface.toplevelElement.style.zIndex == id){
+		    sendConfigureNotify(surface);
+			return;
+		}
+    }	
+	//eof CHB
+	
     var surface = { id: id, x: x, y:y, width: width, height: height, isTemp: isTemp };
     surface.positioned = isTemp;
     surface.transientParent = 0;
@@ -570,6 +581,7 @@ function handleCommands(cmd)
 
 	case 's': // create new surface
 	    id = cmd.get_16();
+		scl = cmd.get_16s() / 100; //CHB
 	    x = Math.ceil(cmd.get_16s()*scl); //CHB Math.ceil(...*scl)
 	    y = Math.ceil(cmd.get_16s()*scl); //CHB Math.ceil(...*scl)
 	    w = Math.ceil(cmd.get_16()*scl); //CHB Math.ceil(...*scl)
@@ -2734,36 +2746,18 @@ function start()
     sendInput ("d", [w, h]);
 }
 
+//CHB
+function refocus()
+{
+  if(inputSocket == null) connect();
+  
+  if(document.getElementById('overlay')!=document.activeElement)
+    document.activeElement.blur();
+}
+//eof CHB
+
 function connect()
 {
-	
-  /*CHB*/
-  //userid
-  window.onbeforeunload = function() {
-    if (window.XMLHttpRequest)
-      {// code for IE7+, Firefox, Chrome, Opera, Safari
-      xmlhttp=new XMLHttpRequest();
-      }
-    else
-      {// code for IE6, IE5
-      xmlhttp=new ActiveXObject('Microsoft.XMLHTTP');
-      }
-
-    // Handle ready state changes ( ignore them until readyState = 4 )
-    xmlhttp.onreadystatechange= function() { if (AJAX.readyState!=4) return false; }
-
-    //get userid
-    var cstring = document.cookie.split(';');
-    var userid = cstring[0].substring(4); //4 is length of uid=
-
-    // we're passing false so this is a syncronous request.
-    // The script will stall until the document has been loaded.
-    // the open statement depends on a global variable titled _userID.
-        // http to https
-    xmlhttp.open('GET', 'https://augtention.dedicated-hosting.ch:8079/cleanup?c='+userid, false);
-    xmlhttp.send(null);
-  }/*eof CHB*/
-
     var url = window.location.toString();
     var query_string = url.split("?");
     if (query_string.length > 1) {
@@ -2778,7 +2772,7 @@ function connect()
 
     var loc = window.location.toString().replace("http:", "ws:").replace("https:", "wss:");
     loc = loc.substr(0, loc.lastIndexOf('/')) + "/socket";
-    ws = new WebSocket(loc, "broadway");
+    var ws = new WebSocket(loc, "broadway"); //CHB var added
     ws.binaryType = "arraybuffer";
 
     ws.onopen = function() {
@@ -2803,3 +2797,74 @@ function connect()
         document.body.appendChild(fakeInput);
     }
 }
+
+
+//CHB: adding the following function...
+function initialize()
+{	
+  //added: get userid
+  window.onbeforeunload = function() {
+    if (window.XMLHttpRequest)
+      {// code for IE7+, Firefox, Chrome, Opera, Safari
+      xmlhttp=new XMLHttpRequest();
+      }
+    else
+      {// code for IE6, IE5
+      xmlhttp=new ActiveXObject('Microsoft.XMLHTTP');
+      }
+
+    // Handle ready state changes ( ignore them until readyState = 4 )
+    xmlhttp.onreadystatechange= function() { if (AJAX.readyState!=4) return false; }
+
+    //get userid
+    var cstring = document.cookie.split(';');
+    var userid = cstring[0].substring(4); //4 is length of uid=
+
+    // we're passing false so this is a syncronous request.
+    // The script will stall until the document has been loaded.
+    // the open statement depends on a global variable titled _userID.
+        // http to https
+    xmlhttp.open('GET', 'https://augtention.dedicated-hosting.ch:8079/cleanup?c='+userid, false);
+    xmlhttp.send(null);
+  }//eof added
+
+    var url = window.location.toString();
+    var query_string = url.split("?");
+    if (query_string.length > 1) {
+	var params = query_string[1].split("&");
+
+        for (var i=0; i<params.length; i++) {
+            var pair = params[i].split("=");
+            if (pair[0] == "debug" && pair[1] == "decoding")
+                debugDecoding = true;
+        }
+    }
+
+    var loc = window.location.toString().replace("http:", "ws:").replace("https:", "wss:");
+    loc = loc.substr(0, loc.lastIndexOf('/')) + "/socket";
+		
+    var ws = new WebSocket(loc, "broadway");
+    ws.binaryType = "arraybuffer";
+
+    ws.onopen = function() {
+	inputSocket = ws;
+    };
+    ws.onclose = function() {
+
+	inputSocket = null;
+    };
+    ws.onmessage = function(event) {
+	handleMessage(event.data);
+    };
+
+    var iOS = /(iPad|iPhone|iPod)/g.test( navigator.userAgent );
+    if (iOS) {
+        fakeInput = document.createElement("input");
+        fakeInput.type = "text";
+        fakeInput.style.position = "absolute";
+        fakeInput.style.left = "-1000px";
+        fakeInput.style.top = "-1000px";
+        document.body.appendChild(fakeInput);
+    }
+}
+//eof CHB
