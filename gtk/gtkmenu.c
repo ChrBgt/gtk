@@ -129,7 +129,9 @@
 #define MENU_SCROLL_TIMEOUT2  20
 
 #define MENU_POPUP_DELAY     225
-#define MENU_POPDOWN_DELAY  1000
+
+//CHB: changed from 1000 to 3000:
+#define MENU_POPDOWN_DELAY   3000
 
 #define ATTACH_INFO_KEY "gtk-menu-child-attach-info-key"
 #define ATTACHED_MENUS "gtk-attached-menus"
