@@ -2754,6 +2754,8 @@ function refocus()
   if(document.getElementById('overlay')!=document.activeElement)
     document.activeElement.blur();
 }
+
+var ws;
 //eof CHB
 
 function connect()
@@ -2772,11 +2774,12 @@ function connect()
 
     var loc = window.location.toString().replace("http:", "ws:").replace("https:", "wss:");
     loc = loc.substr(0, loc.lastIndexOf('/')) + "/socket";
-    var ws = new WebSocket(loc, "broadway"); //CHB var added
+    ws = new WebSocket(loc, "broadway"); //CHB var added
     ws.binaryType = "arraybuffer";
 
     ws.onopen = function() {
 	inputSocket = ws;
+	sendInput ("c", []);//CHB added
     };
     ws.onclose = function() {
 	//if (inputSocket != null)  //CHB test
@@ -2786,6 +2789,11 @@ function connect()
     ws.onmessage = function(event) {
 	handleMessage(event.data);
     };
+	//CHB
+	ws.onerror = function() {
+		console.log("Websocket connection could not be established or broke down");
+	}
+	//eof CHB
 
     var iOS = /(iPad|iPhone|iPod)/g.test( navigator.userAgent );
     if (iOS) {
@@ -2828,43 +2836,6 @@ function initialize()
     xmlhttp.send(null);
   }//eof added
 
-    var url = window.location.toString();
-    var query_string = url.split("?");
-    if (query_string.length > 1) {
-	var params = query_string[1].split("&");
-
-        for (var i=0; i<params.length; i++) {
-            var pair = params[i].split("=");
-            if (pair[0] == "debug" && pair[1] == "decoding")
-                debugDecoding = true;
-        }
-    }
-
-    var loc = window.location.toString().replace("http:", "ws:").replace("https:", "wss:");
-    loc = loc.substr(0, loc.lastIndexOf('/')) + "/socket";
-		
-    var ws = new WebSocket(loc, "broadway");
-    ws.binaryType = "arraybuffer";
-
-    ws.onopen = function() {
-	inputSocket = ws;
-    };
-    ws.onclose = function() {
-
-	inputSocket = null;
-    };
-    ws.onmessage = function(event) {
-	handleMessage(event.data);
-    };
-
-    var iOS = /(iPad|iPhone|iPod)/g.test( navigator.userAgent );
-    if (iOS) {
-        fakeInput = document.createElement("input");
-        fakeInput.type = "text";
-        fakeInput.style.position = "absolute";
-        fakeInput.style.left = "-1000px";
-        fakeInput.style.top = "-1000px";
-        document.body.appendChild(fakeInput);
-    }
+  connect();
 }
 //eof CHB

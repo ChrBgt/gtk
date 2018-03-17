@@ -276,6 +276,8 @@ update_event_state (BroadwayServer *server,
   case BROADWAY_EVENT_GRAB_NOTIFY:
   case BROADWAY_EVENT_UNGRAB_NOTIFY:
     break;
+  case BROADWAY_EVENT_CONNECT: //CHB added
+    break;
   case BROADWAY_EVENT_CONFIGURE_NOTIFY:
     window = g_hash_table_lookup (server->id_ht,
 				  GINT_TO_POINTER (message->configure_notify.id));
@@ -326,7 +328,8 @@ is_pointer_event (BroadwayInputMsg *message)
     message->base.type == BROADWAY_EVENT_BUTTON_RELEASE ||
     message->base.type == BROADWAY_EVENT_SCROLL ||
     message->base.type == BROADWAY_EVENT_GRAB_NOTIFY ||
-    message->base.type == BROADWAY_EVENT_UNGRAB_NOTIFY;
+    message->base.type == BROADWAY_EVENT_UNGRAB_NOTIFY||
+	message->base.type == BROADWAY_EVENT_CONNECT; //CHB added
 }
 
 static void
@@ -500,6 +503,11 @@ parse_input_message (BroadwayInput *input, const unsigned char *message)
   case BROADWAY_EVENT_UNGRAB_NOTIFY:
     msg.grab_reply.res = ntohl (*p++);
     break;
+	
+  //CHB
+  case BROADWAY_EVENT_CONNECT:
+    break;
+  //eof CHB
 
   case BROADWAY_EVENT_CONFIGURE_NOTIFY:
     msg.configure_notify.id = ntohl (*p++);

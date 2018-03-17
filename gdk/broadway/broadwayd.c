@@ -576,6 +576,10 @@ get_event_size (int type)
     case BROADWAY_EVENT_GRAB_NOTIFY:
     case BROADWAY_EVENT_UNGRAB_NOTIFY:
       return sizeof (BroadwayInputGrabReply);
+//CHB
+	case BROADWAY_EVENT_CONNECT:
+	return sizeof (BroadwayInputConnect);
+//eof CHB
     case BROADWAY_EVENT_CONFIGURE_NOTIFY:
       return  sizeof (BroadwayInputConfigureNotify);
     case BROADWAY_EVENT_DELETE_NOTIFY:

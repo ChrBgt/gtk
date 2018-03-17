@@ -23,7 +23,8 @@ typedef enum {
   BROADWAY_EVENT_CONFIGURE_NOTIFY = 'w',
   BROADWAY_EVENT_DELETE_NOTIFY = 'W',
   BROADWAY_EVENT_SCREEN_SIZE_CHANGED = 'd',
-  BROADWAY_EVENT_FOCUS = 'f'
+  BROADWAY_EVENT_FOCUS = 'f',
+  BROADWAY_EVENT_CONNECT = 'c' /*CHB*/
 } BroadwayEventType;
 
 typedef enum {
@@ -103,6 +104,12 @@ typedef struct {
   gint32 res;
 } BroadwayInputGrabReply;
 
+//CHB
+typedef struct {
+  BroadwayInputBaseMsg base;
+} BroadwayInputConnect;
+//eof CHB
+
 typedef struct {
   BroadwayInputBaseMsg base;
   gint32 id;
@@ -142,6 +149,7 @@ typedef union {
   BroadwayInputDeleteNotify delete_notify;
   BroadwayInputScreenResizeNotify screen_resize_notify;
   BroadwayInputFocusMsg focus;
+  BroadwayInputConnect connect; //CHB added
 } BroadwayInputMsg;
 
 typedef enum {

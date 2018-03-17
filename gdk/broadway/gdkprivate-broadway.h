@@ -201,6 +201,7 @@ GDK_AVAILABLE_IN_ALL void _gdk_broadway_window_resize_surface        (GdkWindow 
 
 GDK_AVAILABLE_IN_ALL void _gdk_broadway_cursor_update_theme (GdkCursor *cursor);
 GDK_AVAILABLE_IN_ALL void _gdk_broadway_cursor_display_finalize (GdkDisplay *display);
+GDK_AVAILABLE_IN_ALL void _gdk_broadway_global_connect (); //CHB added
 /*eof addings CHB*/
 
 #define GDK_WINDOW_IS_BROADWAY(win)   (GDK_IS_WINDOW_IMPL_BROADWAY (((GdkWindow *)win)->impl))
