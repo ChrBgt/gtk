@@ -352,9 +352,7 @@ postrun_after_paint (GdkWindow *window)
 void _gdk_broadway_global_connect ()
 {
   //A (new) client has (re)connected: we need a bunch of postrun_after_paint() calls for supporting multiple clients
-  ctrigger = 100;
-  
-g_printerr("connected!!!\n"); 
+  ctrigger = 100;  
 }
 //eof CHB
 

@@ -737,9 +737,13 @@ gtk_file_chooser_dialog_new (const gchar          *title,
                              const gchar          *first_button_text,
                              ...)
 {
+  /* CHB
   GtkWidget *result;
   va_list varargs;
-
+  */
+  return NULL; //CHB --> leads to widget assertion failures in webkit log, needs to be fixed TODO
+  
+  /* CHB  
   va_start (varargs, first_button_text);
   result = gtk_file_chooser_dialog_new_valist (title, parent, action,
                                                first_button_text,
@@ -747,4 +751,5 @@ gtk_file_chooser_dialog_new (const gchar          *title,
   va_end (varargs);
 
   return result;
+  */
 }
