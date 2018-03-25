@@ -87,11 +87,10 @@ G_DEFINE_TYPE (GdkWindowImplBroadway,
 
 //CHB
 static GdkWindowImplBroadway *main_impl=NULL;
-//postrun
+
 static gint postrun1 = 0;
 static gint postrun2 = 0;
 static gint postrun3 = 0;
-static gint ctrigger = 0;
 //eof CHB
 		   
 static GdkDisplay *
@@ -331,28 +330,21 @@ remove_postrun_after_paint (gpointer pr)
 }
 
 static gboolean
-postrun_once_after_paint (GdkWindow *window)
+postrun_once_after_paint ()
 {
   if(postrun3) {
     update_dirty_windows_and_sync ();
-    postrun3 = g_timeout_add (60000, (GSourceFunc)postrun_once_after_paint , window); // 60000 30000
+    postrun3 = g_timeout_add (60000, (GSourceFunc)postrun_once_after_paint , NULL);
   }
 
   return  G_SOURCE_REMOVE;
 }
 
 static gboolean
-postrun_after_paint (GdkWindow *window)
+postrun_after_paint ()
 {
-  if(ctrigger > 0) ctrigger--;
   update_dirty_windows_and_sync ();
-  return  G_SOURCE_CONTINUE; //alt: _REMOVE
-}
-
-void _gdk_broadway_global_connect ()
-{
-  //A (new) client has (re)connected: we need a bunch of postrun_after_paint() calls for supporting multiple clients
-  ctrigger = 100;  
+  return  G_SOURCE_CONTINUE;
 }
 //eof CHB
 
@@ -386,15 +378,20 @@ on_frame_clock_after_paint (GdkFrameClock *clck, //CHB clock
     //CHB
 
     //postrun
-    postrun1 = g_timeout_add (50, (GSourceFunc)postrun_after_paint , window); //50 150 100 200
-	if(!ctrigger){
-      postrun2 = g_timeout_add (20000, (GSourceFunc)remove_postrun_after_paint , (gpointer)((ulong)postrun1)); //50000 8000    1000 600   3000 6000   12000
-      postrun3 = g_timeout_add (21000, (GSourceFunc)postrun_once_after_paint , window); //51000   9000      60000 30000  120000
-	}
+    postrun1 = g_timeout_add (50, (GSourceFunc)postrun_after_paint, NULL);
+    postrun2 = g_timeout_add (20000, (GSourceFunc)remove_postrun_after_paint , (gpointer)((ulong)postrun1));
+    postrun3 = g_timeout_add (21000, (GSourceFunc)postrun_once_after_paint , NULL);
   }
   
   //eof CHB
 }
+
+//CHB
+void _gdk_broadway_global_connect ()
+{
+  on_frame_clock_after_paint(NULL, NULL);
+}
+//eof CHB
 
 static void
 connect_frame_clock (GdkWindow *window)
