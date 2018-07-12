@@ -149,12 +149,12 @@ update_dirty_windows_and_sync (void)
   }
   impl = main_impl;
 
-  if(main_impl->wrapper) gdk_window_get_geometry(main_impl->wrapper, &x, &y, &width, &height);
+  if(main_impl && main_impl->wrapper) gdk_window_get_geometry(main_impl->wrapper, &x, &y, &width, &height);
   ns = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width - x, height - y);
   cr_ns = cairo_create(ns);
 
   // mainimpl->dirty = FALSE;
-  if(main_impl->surface) {
+  if(main_impl && main_impl->surface) {
         cairo_surface_flush(main_impl->surface);
     cairo_set_source_surface (cr_ns, main_impl->surface, x, y); //should be 0,0
   }
@@ -180,10 +180,10 @@ update_dirty_windows_and_sync (void)
 
 //  for (l = display->toplevels; l != NULL; l = l->next) {
 //    impl = l->data;
-
-  _gdk_broadway_server_window_update (display->server,
-                                      impl->id,
-                                      ns);
+  if(impl && impl->id)
+    _gdk_broadway_server_window_update (display->server,
+                                        impl->id,
+                                        ns);
 //  } 
 //Achtung: hier keine Schleife heisst, dass an broadway.js nur das letzte Fenster per update gegeben wird... keine Aktualisierungen für die anderen fenster (obwohl die ja im frame mitkommen)
 //Evtl. die window update funktion verfeinern: statt ns auch null zulassen, dann werden die frame daten nur einmal rübergeschoben
@@ -346,6 +346,20 @@ postrun_after_paint ()
   update_dirty_windows_and_sync ();
   return  G_SOURCE_CONTINUE;
 }
+
+static void remove_open_postruns ()
+{
+  if(postrun1) { g_source_remove(postrun1); postrun1 = 0; }
+  if(postrun2) { g_source_remove(postrun2); postrun2 = 0; }
+  if(postrun3) { g_source_remove(postrun3); postrun3 = 0; }
+}
+
+static void launch_postruns ()
+{
+    postrun1 = g_timeout_add (50, (GSourceFunc)postrun_after_paint, NULL);
+    postrun2 = g_timeout_add (20000, (GSourceFunc)remove_postrun_after_paint , (gpointer)((ulong)postrun1));
+    postrun3 = g_timeout_add (21000, (GSourceFunc)postrun_once_after_paint , NULL);
+}
 //eof CHB
 
 static void
@@ -366,30 +380,23 @@ on_frame_clock_after_paint (GdkFrameClock *clck, //CHB clock
   }
 
   if(dirty){
-    //remove open postruns
-    if(postrun1) { g_source_remove(postrun1); postrun1 = 0; }
-    if(postrun2) { g_source_remove(postrun2); postrun2 = 0; }
-    if(postrun3) { g_source_remove(postrun3); postrun3 = 0; }
-	
+    remove_open_postruns();
     //eof CHB
 
     update_dirty_windows_and_sync ();
   
     //CHB
-
-    //postrun
-    postrun1 = g_timeout_add (50, (GSourceFunc)postrun_after_paint, NULL);
-    postrun2 = g_timeout_add (20000, (GSourceFunc)remove_postrun_after_paint , (gpointer)((ulong)postrun1));
-    postrun3 = g_timeout_add (21000, (GSourceFunc)postrun_once_after_paint , NULL);
-  }
-  
+    launch_postruns();
+  }  
   //eof CHB
 }
 
 //CHB
 void _gdk_broadway_global_connect ()
 {
-  on_frame_clock_after_paint(NULL, NULL);
+  remove_open_postruns();
+  update_dirty_windows_and_sync ();
+  launch_postruns();  
 }
 //eof CHB
 

@@ -109,7 +109,8 @@ var showKeyboardChanged = false;
 var firstTouchDownId = null;
 
 //var scl=1.25; //CHB  Correction Factor needed? 1.006 (Crome 1.008) TODO
-var scl=1.0;
+var scl=1.0; // CHB
+var disconnected = false; //CHB
 
 var GDK_CROSSING_NORMAL = 0;
 var GDK_CROSSING_GRAB = 1;
@@ -160,12 +161,16 @@ var positionIndex = 0;
 function cmdCreateSurface(id, x, y, width, height, isTemp)
 {
 	//CHB to avoid duplicated canvas generation
-	for (var i = 0; i < stackingOrder.length; i++) {
-	    var surface = stackingOrder[i];
-	    if(surface.toplevelElement.style.zIndex == id){
-		    sendConfigureNotify(surface);
-			return;
-		}
+console.log("cmdCreateSurface; disconnected = ", disconnected);  	
+	if(disconnected){
+console.log("cmdCreateSurface: disconnected true -> false");
+      restackWindows();
+	  while(stackingOrder.length > 0) {
+	    var surface = stackingOrder[stackingOrder.length -1];
+		cmdDeleteSurface(surface.toplevelElement.style.zIndex);
+      }
+	
+	  disconnected = false;
     }	
 	//eof CHB
 	
@@ -576,6 +581,8 @@ function handleCommands(cmd)
 	switch (command) {
 	case 'D':
 	    //alert ("disconnected"); //CHB test
+console.log("Disconnected D -> inputSocket null ", inputSocket);
+	    //ws.close(); //CHB
 	    inputSocket = null;
 	    break;
 
@@ -2558,7 +2565,7 @@ function onMouseWheel(ev)
 }
 
 function onTouchStart(ev) {
-    event.preventDefault();
+    window.event.preventDefault();//CHB window added
 
     updateKeyboardStatus();
     updateForEvent(ev);
@@ -2631,7 +2638,7 @@ function onTouchStart(ev) {
 }
 
 function onTouchMove(ev) {
-    event.preventDefault();
+    window.event.preventDefault();//CHB window added
 
     updateKeyboardStatus();
     updateForEvent(ev);
@@ -2665,7 +2672,7 @@ function onTouchMove(ev) {
 }
 
 function onTouchEnd(ev) {
-    event.preventDefault();
+    window.event.preventDefault();//CHB window added
 
     updateKeyboardStatus();
     updateForEvent(ev);
@@ -2749,10 +2756,36 @@ function start()
 //CHB
 function refocus()
 {
-  if(inputSocket == null) connect();
+  if(inputSocket == null) {
+    disconnected = true;
+console.log("refocus -> connect; disconnected, ws, inputSocket ", disconnected, ws, inputSocket);  
+    if(ws) ws.close();
+	connect();
+  } 
   
   if(document.getElementById('overlay')!=document.activeElement)
     document.activeElement.blur();
+//else {
+//	disconnected =  false;
+//	sendInput ("c", []);
+//  }
+}
+
+function initialfocus()
+{
+  if(document.getElementById('overlay')!=document.activeElement)
+    document.activeElement.blur();
+
+  if(inputSocket == null) {
+    disconnected = true;
+console.log("initialfocus -> connect; disconnected, ws, inputSocket ", disconnected, ws, inputSocket);  
+    if (ws) ws.close();
+	connect();
+  } else {
+	disconnected =  false;
+console.log("initialfocus -> sendInput; disconnected, ws, inputSocket ", disconnected, ws, inputSocket);  
+	sendInput ("c", []);
+  }
 }
 
 var ws;
@@ -2774,17 +2807,20 @@ function connect()
 
     var loc = window.location.toString().replace("http:", "ws:").replace("https:", "wss:");
     loc = loc.substr(0, loc.lastIndexOf('/')) + "/socket";
-    ws = new WebSocket(loc, "broadway"); //CHB var added
+    ws = new WebSocket(loc, "broadway"); //CHB var added [removed?]
     ws.binaryType = "arraybuffer";
 
     ws.onopen = function() {
 	inputSocket = ws;
 	sendInput ("c", []);//CHB added
+console.log("onopen: inputSocket -> ws; ws, disconnected = ", ws, disconnected);
     };
-    ws.onclose = function() {
+    ws.onclose = function(e) {
 	//if (inputSocket != null)  //CHB test
 	//    alert ("disconnected");
-	inputSocket = null;
+console.log("onclose: inputSocket remains; disconnected = ", disconnected, e);
+    if(!ws || ws.readyState != 1) //CHB inserted: onclose is thrown for "no" reason... keep on going
+	  inputSocket = null;	  
     };
     ws.onmessage = function(event) {
 	handleMessage(event.data);
@@ -2795,7 +2831,9 @@ function connect()
 	}
 	//eof CHB
 
+	/*
     var iOS = /(iPad|iPhone|iPod)/g.test( navigator.userAgent );
+	
     if (iOS) {
         fakeInput = document.createElement("input");
         fakeInput.type = "text";
@@ -2804,12 +2842,12 @@ function connect()
         fakeInput.style.top = "-1000px";
         document.body.appendChild(fakeInput);
     }
+	*/
 }
 
 
 //CHB: adding the following function...
-function initialize()
-{	
+
   //added: get userid
   window.onbeforeunload = function() {
     if (window.XMLHttpRequest)
@@ -2834,8 +2872,7 @@ function initialize()
         // http to https
     xmlhttp.open('GET', 'https://augtention.dedicated-hosting.ch:8079/cleanup?c='+userid, false);
     xmlhttp.send(null);
-  }//eof added
+  };//eof added
 
-  connect();
-}
+
 //eof CHB
