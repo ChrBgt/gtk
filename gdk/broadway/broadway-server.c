@@ -1139,8 +1139,9 @@ send_data (HttpRequest *request,
   res = g_strdup_printf ("HTTP/1.0 200 OK\r\n"
 			 "Content-Type: %s\r\n"
 			 "Content-Length: %"G_GSIZE_FORMAT"\r\n"
+			 "Access-Control-Allow-Origin: https:\/\/augtention.dedicated-hosting.ch\r\n"
 			 "\r\n",
-			 mimetype, len);
+			 mimetype, len);//CHB "Access-Control-Allow-Origin : https:\/\/augtention.dedicated-hosting.ch\r\n" added
 
   /* TODO: This should really be async */
   g_output_stream_write_all (g_io_stream_get_output_stream (request->connection),

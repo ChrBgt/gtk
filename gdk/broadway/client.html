@@ -35,34 +35,35 @@ iframe#ifrm {
 <script type="text/javascript" src="broadway.js"></script>
 </head>
 
-<body id="overlay"> <!--onload="initialize()" onclick="refocus()"> CHB: connect -> initialize; refocus added ; z-index added -->
-<!-- CHB: iframe, port, http to https -->
-<iframe id="ifrm" src="https://augtention.dedicated-hosting.ch" scrolling="no">Your browser doesn't support iframes</iframe>
+<body id="overlay"> <!--onload="initialize()" onclick="refocus()"> CHB: connect -> initialize; refocus added ; z-index added/changed -->
+<!-- CHB: iframe, port, http to https      was: https://augtention.dedicated-hosting.ch -->
+<iframe id="ifrm" src="http://augtention.com" scrolling="no">Your browser doesn't support iframes</iframe>
 <script>
+   function receiveMessage(e) {
+console.log("receive message -> initialfocus; ws, ovl, inputSocket, e.data, disconnected "+ ws+ ovl+ inputSocket+ e.data+ disconnected);   
+     frm.style.zIndex = -1;
+	 initialfocus();
+     console.log("streaming now activated");
+   }
+   
    var ovl = document.getElementById('overlay');      
    var frm = document.getElementById('ifrm');
    var prt = parseInt(window.location.port) + 1;
-
+   var uid = document.cookie.replace(/(?:(?:^|.*;\s*)uid\s*\=\s*([^;]*).*$)|^.*$/, "$1");
+   
    frm.src = window.location.protocol + '//' + window.location.hostname + ':' + prt.toString() 
-             + '/' + document.cookie.split('=')[1];
+             + '/' + uid;
    frm.width = window.innerWidth;
    frm.height = window.innerHeight;
    frm.style.zIndex = 99999;
-   ovl.style.zIndex = 0;
+   ovl.style.zIndex = -1;
         
    window.addEventListener('message', receiveMessage, false);
 
    ovl.onload = connect;
    ovl.onclick = refocus;
    if('ontouchstart' in document.documentElement)
-     ovl.ontouchstart = refocus;
-	 
-   function receiveMessage(e) { 
-console.log("receive message -> initialfocus; ws, ovl, inputSocket, e.data, disconnected ", ws, ovl, inputSocket, e.data, disconnected);
-     frm.style.zIndex = -99999;
-	 initialfocus();
-     console.log("streaming now activated");
-   }	 
+     ovl.ontouchstart = refocus;	 
    
 </script>
 <!-- eof CHB -->

@@ -108,9 +108,13 @@ var showKeyboard = false;
 var showKeyboardChanged = false;
 var firstTouchDownId = null;
 
+//CHB
 //var scl=1.25; //CHB  Correction Factor needed? 1.006 (Crome 1.008) TODO
-var scl=1.0; // CHB
-var disconnected = false; //CHB
+var scl = 1.0;
+var disconnected = false;
+var sentInputCnt = 0;
+var inactiveCnt = 0;
+//eof CHB
 
 var GDK_CROSSING_NORMAL = 0;
 var GDK_CROSSING_GRAB = 1;
@@ -524,7 +528,7 @@ function decodeBuffer(context, oldData, w, h, data, debug)
                 break;
 
             default:
-                alert("Unknown buffer commend " + cmd);
+                console.log("Unknown buffer commend " + cmd);
             }
         }
     }
@@ -673,7 +677,7 @@ console.log("Disconnected D -> inputSocket null ", inputSocket);
         break;
 
 	default:
-	    alert("Unknown op " + command);
+	    console.log("Unknown op " + command);
 	}
     }
     return true;
@@ -763,6 +767,8 @@ function getSurfaceId(ev) {
 
 function sendInput(cmd, args)
 {
+	sentInputCnt++; //CHB
+	
     if (inputSocket == null)
         return;
 
@@ -2758,7 +2764,7 @@ function refocus()
 {
   if(inputSocket == null) {
     disconnected = true;
-console.log("refocus -> connect; disconnected, ws, inputSocket ", disconnected, ws, inputSocket);  
+console.log("refocus -> connect; disconnected, ws, inputSocket "+ disconnected+ ws+ inputSocket);  
     if(ws) ws.close();
 	connect();
   } 
@@ -2778,7 +2784,7 @@ function initialfocus()
 
   if(inputSocket == null) {
     disconnected = true;
-console.log("initialfocus -> connect; disconnected, ws, inputSocket ", disconnected, ws, inputSocket);  
+console.log("initialfocus -> connect; disconnected, ws, inputSocket "+ disconnected+ ws+ inputSocket);  
     if (ws) ws.close();
 	connect();
   } else {
@@ -2805,7 +2811,7 @@ function connect()
         }
     }
 
-    var loc = window.location.toString().replace("http:", "ws:").replace("https:", "wss:");
+    var loc = window.location.toString().replace("https:", "wss:").replace("http:", "ws:");  //CHB gedreht: erst https
     loc = loc.substr(0, loc.lastIndexOf('/')) + "/socket";
     ws = new WebSocket(loc, "broadway"); //CHB var added [removed?]
     ws.binaryType = "arraybuffer";
@@ -2813,14 +2819,17 @@ function connect()
     ws.onopen = function() {
 	inputSocket = ws;
 	sendInput ("c", []);//CHB added
-console.log("onopen: inputSocket -> ws; ws, disconnected = ", ws, disconnected);
+console.log("onopen: inputSocket -> ws; ws, disconnected = "+ ws+ disconnected);
     };
     ws.onclose = function(e) {
-	//if (inputSocket != null)  //CHB test
-	//    alert ("disconnected");
-console.log("onclose: inputSocket remains; disconnected = ", disconnected, e);
-    if(!ws || ws.readyState != 1) //CHB inserted: onclose is thrown for "no" reason... keep on going
-	  inputSocket = null;	  
+//	if (inputSocket != null) { //CHB test
+//	    alert ("disconnected");
+//	}
+		console.log("onclose : inputSocket remains; disconnected = ", disconnected, e, ws);
+		if(!ws || ws.readyState != 1) { //CHB inserted: onclose is thrown for "no" reason... keep on going
+			console.log("onclose: no ws or readystate != 1: unexpected close", ws);
+			inputSocket = null;
+		}
     };
     ws.onmessage = function(event) {
 	handleMessage(event.data);
@@ -2831,7 +2840,7 @@ console.log("onclose: inputSocket remains; disconnected = ", disconnected, e);
 	}
 	//eof CHB
 
-	/*
+	
     var iOS = /(iPad|iPhone|iPod)/g.test( navigator.userAgent );
 	
     if (iOS) {
@@ -2842,37 +2851,60 @@ console.log("onclose: inputSocket remains; disconnected = ", disconnected, e);
         fakeInput.style.top = "-1000px";
         document.body.appendChild(fakeInput);
     }
-	*/
+	
 }
 
 
-//CHB: adding the following function...
+//CHB
 
-  //added: get userid
-  window.onbeforeunload = function() {
-    if (window.XMLHttpRequest)
-      {// code for IE7+, Firefox, Chrome, Opera, Safari
-      xmlhttp=new XMLHttpRequest();
-      }
-    else
-      {// code for IE6, IE5
-      xmlhttp=new ActiveXObject('Microsoft.XMLHTTP');
-      }
+var brwAliveTimer = setInterval(() => {
+	
+	if (sentInputCnt > 0) {
+		//user is still active
+		sentInputCnt = 0;
+		inactiveCnt = 0;
+		
+	    //get userid
+		let uid = '';
+		let name = 'uid=';
+		let decodedCookie = decodeURIComponent(document.cookie);
+		let ca = decodedCookie.split(';');
+		let i = 0;
+		while (i < ca.length && uid === '') {
+			var c = ca[i];
+			while (c.charAt(0) == ' ') c = c.substring(1);
+			if (c.indexOf(name) == 0) uid = c.substring(name.length, c.length); // +1 -1 neede
+			i++;
+		}
+	
+		//let cstring = document.cookie.split(';');
+		//let uid = cstring[0].substring(4); //4 is length of uid=
+		console.log('broadway uid: ' + uid + ' disconnected ' + disconnected + ' inputSocket ' + inputSocket);
+	
+		if(uid != '' && uid != null && uid != 'null' ) {
+			if (window.XMLHttpRequest) {
+				// code for IE7+, Firefox, Chrome, Opera, Safari
+				xmlhttp=new XMLHttpRequest();
+			} else {
+				// code for IE6, IE5
+				xmlhttp=new ActiveXObject('Microsoft.XMLHTTP');
+			}
 
-    // Handle ready state changes ( ignore them until readyState = 4 )
-    xmlhttp.onreadystatechange= function() { if (AJAX.readyState!=4) return false; }
+			// Handle ready state changes ( ignore them until readyState = 4 )
+			xmlhttp.onreadystatechange= function() { if (xmlhttp.readyState!=4) return false; }
 
-    //get userid
-    var cstring = document.cookie.split(';');
-    var userid = cstring[0].substring(4); //4 is length of uid=
+			// [TODO: http to https]   TODO http fehler abfangen... sind unerheblich
+			xmlhttp.open('PUT', 'http://augtention.com/api/' + uid, true); //false --> synchrone
+			xmlhttp.send(null);	
+		} else
+			console.log('broadway: bad uid');
 
-    // we're passing false so this is a syncronous request.
-    // The script will stall until the document has been loaded.
-    // the open statement depends on a global variable titled _userID.
-        // http to https
-    xmlhttp.open('GET', 'https://augtention.dedicated-hosting.ch:8079/cleanup?c='+userid, false);
-    xmlhttp.send(null);
-  };//eof added
+	} else {
+		if (inactiveCnt == 8 && inputSocket) // 8* 15 sec = 2 minutes --> augtcontrol: 3 minutes (= 12 * 15 sec)
+			alert("Warning:\naugtention's browsing session could be closed soon due to user's inactivity");
 
+		inactiveCnt++;
+	}
+},	15000);
 
 //eof CHB
