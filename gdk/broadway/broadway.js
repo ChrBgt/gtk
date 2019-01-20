@@ -592,13 +592,19 @@ console.log("Disconnected D -> inputSocket null ", inputSocket);
 
 	case 's': // create new surface
 	    id = cmd.get_16();
-		scl = cmd.get_16s() / 100; //CHB
-	    x = Math.ceil(cmd.get_16s()*scl); //CHB Math.ceil(...*scl)
-	    y = Math.ceil(cmd.get_16s()*scl); //CHB Math.ceil(...*scl)
-	    w = Math.ceil(cmd.get_16()*scl); //CHB Math.ceil(...*scl)
-	    h = Math.ceil(cmd.get_16()*scl); //CHB Math.ceil(...*scl)
+		let scltmp = cmd.get_16s() / 100; //CHB
+	    x = Math.ceil(cmd.get_16s()*scltmp); //CHB Math.ceil(...*scltmp)
+	    y = Math.ceil(cmd.get_16s()*scltmp); //CHB Math.ceil(...*scltmp)
+	    w = Math.ceil(cmd.get_16()*scltmp); //CHB Math.ceil(...*scltmp)
+	    h = Math.ceil(cmd.get_16()*scltmp); //CHB Math.ceil(...*scltmp)
 	    var isTemp = cmd.get_bool();
 	    cmdCreateSurface(id, x, y, w, h, isTemp);
+		//CHB
+		if(id == 1) {
+			scl = scltmp * window.innerWidth / w; //w of id 1 contains size of base surface
+			console.log('id = 1 : ' + window.innerWidth +' '+ w +' '+ window.innerHeight +' '+ h +' '+ scl);
+		}
+		//eof CHB
 	    break;
 
 	case 'S': // Show a surface
@@ -768,7 +774,7 @@ function getSurfaceId(ev) {
 function sendInput(cmd, args)
 {
 	sentInputCnt++; //CHB
-	
+
     if (inputSocket == null)
         return;
 
@@ -2890,20 +2896,23 @@ var brwAliveTimer = setInterval(() => {
 				xmlhttp=new ActiveXObject('Microsoft.XMLHTTP');
 			}
 
-			// Handle ready state changes ( ignore them until readyState = 4 )
-			xmlhttp.onreadystatechange= function() { if (xmlhttp.readyState!=4) return false; }
-
 			// [TODO: http to https]   TODO http fehler abfangen... sind unerheblich
-			xmlhttp.open('PUT', 'http://augtention.com/api/' + uid, true); //false --> synchrone
+			xmlhttp.open('PUT', 'http://augtention.com/api/' + uid, true); //false --> synchrone			
+			
+			// Handle ready state changes ( ignore them until readyState = 4 )
+			xmlhttp.onreadystatechange= function() { if (xmlhttp.readyState!=4) { return false;} }
+
 			xmlhttp.send(null);	
 		} else
 			console.log('broadway: bad uid');
 
 	} else {
-		if (inactiveCnt == 8 && inputSocket) // 8* 15 sec = 2 minutes --> augtcontrol: 3 minutes (= 12 * 15 sec)
+		if (inactiveCnt == 8 && inputSocket) { // 8* 15 sec = 2 minutes --> augtcontrol: 3 minutes (= 12 * 15 sec)
 			alert("Warning:\naugtention's browsing session could be closed soon due to user's inactivity");
-
-		inactiveCnt++;
+			sentInputCnt = 1;
+			inactiveCnt = 0;
+		} else
+			inactiveCnt++;
 	}
 },	15000);
 
