@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html id="brdwy">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -37,7 +37,7 @@ iframe#ifrm {
 
 <body id="overlay"> <!--onload="initialize()" onclick="refocus()"> CHB: connect -> initialize; refocus added ; z-index added/changed -->
 <!-- CHB: iframe, port, http to https      was: https://augtention.dedicated-hosting.ch -->
-<iframe id="ifrm" src="http://augtention.com" scrolling="no">Your browser doesn't support iframes</iframe>
+<iframe id="ifrm" src="https://augtention.com" scrolling="no">Your browser doesn't support iframes</iframe>
 <script>
    function receiveMessage(e) {
 console.log("receive message -> initialfocus; ws, ovl, inputSocket, e.data, disconnected "+ ws+ ovl+ inputSocket+ e.data+ disconnected);   
@@ -63,8 +63,8 @@ console.log("receive message -> initialfocus; ws, ovl, inputSocket, e.data, disc
    ovl.onload = connect;
    ovl.onclick = refocus;
    if('ontouchstart' in document.documentElement)
-     ovl.ontouchstart = refocus;	 
-   
+     ovl.ontouchstart = refocus;
+
 </script>
 <!-- eof CHB -->
 </body>

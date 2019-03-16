@@ -114,6 +114,9 @@ var scl = 1.0;
 var disconnected = false;
 var sentInputCnt = 0;
 var inactiveCnt = 0;
+var destroyed = false;
+var sclDetermined = false;
+var andrd = null;;
 //eof CHB
 
 var GDK_CROSSING_NORMAL = 0;
@@ -592,18 +595,20 @@ console.log("Disconnected D -> inputSocket null ", inputSocket);
 
 	case 's': // create new surface
 	    id = cmd.get_16();
-		let scltmp = cmd.get_16s() / 100; //CHB
-	    x = Math.ceil(cmd.get_16s()*scltmp); //CHB Math.ceil(...*scltmp)
-	    y = Math.ceil(cmd.get_16s()*scltmp); //CHB Math.ceil(...*scltmp)
-	    w = Math.ceil(cmd.get_16()*scltmp); //CHB Math.ceil(...*scltmp)
-	    h = Math.ceil(cmd.get_16()*scltmp); //CHB Math.ceil(...*scltmp)
+		let scltmp = cmd.get_16s() / 100; //CHB  currently not needed
+	    x = Math.ceil(cmd.get_16s());
+	    y = Math.ceil(cmd.get_16s());
+	    w = Math.ceil(cmd.get_16());
+	    h = Math.ceil(cmd.get_16());
 	    var isTemp = cmd.get_bool();
-	    cmdCreateSurface(id, x, y, w, h, isTemp);
+	    //cmdCreateSurface(id, x, y, w, h, isTemp);  CHB
 		//CHB
-		if(id == 1) {
-			scl = scltmp * window.innerWidth / w; //w of id 1 contains size of base surface
-			console.log('id = 1 : ' + window.innerWidth +' '+ w +' '+ window.innerHeight +' '+ h +' '+ scl);
+		if(id == 1 && !sclDetermined) {
+			scl = window.innerWidth / w; //w of id 1 contains size of base surface  //scltmp * not needed here
+			console.log('id = 1 : ' + window.innerWidth +' '+ w +' '+ window.innerHeight +' '+ h +' '+ scl+ ' ' + scltmp);
+			sclDetermined = true;
 		}
+	    cmdCreateSurface(id, x*scl, y*scl, w*scl, h*scl, isTemp);
 		//eof CHB
 	    break;
 
@@ -774,7 +779,6 @@ function getSurfaceId(ev) {
 function sendInput(cmd, args)
 {
 	sentInputCnt++; //CHB
-
     if (inputSocket == null)
         return;
 
@@ -800,7 +804,7 @@ function getPositionsFromAbsCoord(absX, absY, relativeId) {
 	res.winX = res.winX - surface.x;
 	res.winY = res.winY - surface.y;
     }
-	
+
     return res;
 }
 
@@ -829,10 +833,13 @@ function getEffectiveEventTarget (id) {
 function updateKeyboardStatus() {
     if (fakeInput != null && showKeyboardChanged) {
         showKeyboardChanged = false;
-        if (showKeyboard)
+        if (showKeyboard) {
+//alert('fakeInput focus');
             fakeInput.focus();
-        else
+}        else {
+//alert('fakeInput blur');
             fakeInput.blur();
+}
     }
 }
 
@@ -2294,7 +2301,7 @@ var specialKeyTable = {
 
 function getEventKeySym(ev) {
     if (typeof ev.which !== "undefined" && ev.which > 0)
-	return ev.which;
+		return ev.which;
     return ev.keyCode;
 }
 
@@ -2304,6 +2311,7 @@ function getEventKeySym(ev) {
 // with the key. The rest we pass on to keypress so we can get the
 // translated keysym.
 function getKeysymSpecial(ev) {
+//alert('getKeysymSpecial ' + ev.keyCode);//andrd 229, immer...
     if (ev.keyCode in specialKeyTable) {
 	var r = specialKeyTable[ev.keyCode];
 	var flags = 0;
@@ -2448,6 +2456,7 @@ function ignoreKeyEvent(ev) {
 
 function handleKeyDown(e) {
     var fev = null, ev = (e ? e : window.event), keysym = null, suppress = false;
+//alert('handleKeyDown');	
 
     fev = copyKeyEvent(ev);
 
@@ -2458,10 +2467,17 @@ function handleKeyDown(e) {
 	// If it is a key or key combination that might trigger
 	// browser behaviors or it has no corresponding keyPress
 	// event, then send it immediately
-	if (!ignoreKeyEvent(ev))
+	if (!ignoreKeyEvent(ev)) {
+//alert('handleKeyDown ' + keysym);
 	    sendInput("k", [keysym, lastState]);
+	} 
+//else 
+//alert('handleKeyDown andrd' + keysym);
+	
 	suppress = true;
     }
+//else
+//alert('handleKeyDown 0');
 
     if (! ignoreKeyEvent(ev)) {
 	// Add it to the list of depressed keys
@@ -2472,7 +2488,7 @@ function handleKeyDown(e) {
 	// Suppress bubbling/default actions
 	return cancelEvent(ev);
     }
-
+	
     // Allow the event to bubble and become a keyPress event which
     // will have the character code translated
     return true;
@@ -2480,6 +2496,7 @@ function handleKeyDown(e) {
 
 function handleKeyPress(e) {
     var ev = (e ? e : window.event), kdlen = keyDownList.length, keysym = null;
+//alert('handleKeyPress');	
 
     if (((ev.which !== "undefined") && (ev.which === 0)) ||
 	getKeysymSpecial(ev)) {
@@ -2503,15 +2520,22 @@ function handleKeyPress(e) {
     }
 
     // Send the translated keysym
-    if (keysym > 0)
-	sendInput ("k", [keysym, lastState]);
-
+    if (keysym > 0) {
+//alert('handleKeyPress ' + keysym);
+		sendInput ("k", [keysym, lastState]);
+	}
+	
     // Stop keypress events just in case
     return cancelEvent(ev);
 }
-
+var oldKeyStrLength=0; //CHB
 function handleKeyUp(e) {
-    var fev = null, ev = (e ? e : window.event), i, keysym;
+	//CHB
+	var keysym;
+    var kdlen = keyDownList.length;
+//alert('handleKeyUp');	
+	
+    var fev = null, ev = (e ? e : window.event); //CHB keysym moved to above, i removed as not being used
 
     fev = getKeyEvent(ev.keyCode, true);
 
@@ -2521,9 +2545,12 @@ function handleKeyUp(e) {
 	//log("Key event (keyCode = " + ev.keyCode + ") not found on keyDownList");
 	keysym = 0;
     }
-
-    if (keysym > 0)
-	sendInput ("K", [keysym, lastState]);
+	
+    if (keysym > 0) {
+//alert('handleKeyUp ' + keysym);
+		sendInput ("K", [keysym, lastState]);
+	}
+	
     return cancelEvent(ev);
 }
 
@@ -2777,6 +2804,7 @@ console.log("refocus -> connect; disconnected, ws, inputSocket "+ disconnected+ 
   
   if(document.getElementById('overlay')!=document.activeElement)
     document.activeElement.blur();
+
 //else {
 //	disconnected =  false;
 //	sendInput ("c", []);
@@ -2805,6 +2833,30 @@ var ws;
 
 function connect()
 {
+	
+	
+	//CHB ???
+/*
+	alert(grab.window + ' ' +
+	grab.ownerEvents + ' ' +
+	grab.implicit + ' ' +
+	keyDownList.length + ' ' +
+	showKeyboard + ' ' +
+	showKeyboardChanged + ' ' +
+	firstTouchDownId + ' ' +
+	disconnected + ' ' +
+	sentInputCnt + ' ' +
+	inactiveCnt + ' ' +
+	andrd);
+
+	//grab.implicit = false;
+	showKeyboard = false; //???
+	showKeyboardChanged = false; //???
+	*/
+	//eof CHB
+	
+	
+	
     var url = window.location.toString();
     var query_string = url.split("?");
     if (query_string.length > 1) {
@@ -2825,6 +2877,9 @@ function connect()
     ws.onopen = function() {
 	inputSocket = ws;
 	sendInput ("c", []);//CHB added
+
+//sendInput ("K", [0, lastState]);//???
+
 console.log("onopen: inputSocket -> ws; ws, disconnected = "+ ws+ disconnected);
     };
     ws.onclose = function(e) {
@@ -2846,71 +2901,158 @@ console.log("onopen: inputSocket -> ws; ws, disconnected = "+ ws+ disconnected);
 	}
 	//eof CHB
 
-	
-    var iOS = /(iPad|iPhone|iPod)/g.test( navigator.userAgent );
-	
-    if (iOS) {
+	var iOS = /(iPad|iPhone|iPod)/gi.test( navigator.userAgent ); //CHB g --> gi
+	andrd = /(android)/gi.test( navigator.userAgent ); //CHB
+
+    if ( (iOS || andrd) && !document.getElementById('fakeinput') ) { //CHB andrd added, and check on fakeinput
+		//alert("fakeinput added");
         fakeInput = document.createElement("input");
         fakeInput.type = "text";
+		//fakeInput.value = ""; //CHB
+		fakeInput.id = "fakeinput"; //CHB
         fakeInput.style.position = "absolute";
         fakeInput.style.left = "-1000px";
         fakeInput.style.top = "-1000px";
+		//fakeInput.style.width = '0px';//CHB
         document.body.appendChild(fakeInput);
+		
+		//CHB
+		if(andrd) {
+			document.getElementById('fakeinput').addEventListener('input', function(ev){
+				let keysym = 0;
+				let keystr = document.getElementById('fakeinput').value;
+				if (keystr.length > oldKeyStrLength) {
+					if ((keystr.length-oldKeyStrLength) == 1) {
+					
+						ev.keyCode = keystr.charCodeAt(keystr.length-1);
+						//keysym = keystr.charCodeAt(keystr.length-1);
+					
+						/* TODO...
+						if (((ev.which !== "undefined") && (ev.which === 0)) ||
+						getKeysymSpecial(ev)) {
+							return cancelEvent(ev);
+						}
+						*/
+						keysym = getKeysym(ev);				
+					} else {
+						//alert(keystr.length + ' ' + oldKeyStrLength);
+						keysym = 0;
+					}
+
+					if (keysym > 0) {
+						sendInput ("k", [keysym, lastState]);
+						setTimeout(function(){ sendInput ("K", [keysym, lastState]);}, 30); //ende kommt nicht wenn nicht erfolgreich
+					}
+				} else {
+					sendInput ("k", [65288, lastState]);//backspace
+					setTimeout(function(){ sendInput ("K", [65288, lastState]); }, 30);
+				}
+		
+				oldKeyStrLength = keystr.length;
+			}, false);
+		}
+		//eof CHB		
     }
-	
 }
 
 
 //CHB
+function putAlive(uid, mode) {
+
+	let xmlhttp;
+	
+	if (window.XMLHttpRequest) {
+		// code for IE7+, Firefox, Chrome, Opera, Safari
+		xmlhttp=new XMLHttpRequest();
+	} else {
+		// code for IE6, IE5
+		xmlhttp=new ActiveXObject('Microsoft.XMLHTTP');
+	}
+
+	// Handle ready state changes ( ignore them until readyState = 4 )
+	xmlhttp.onreadystatechange = function() { 
+		if (this.readyState == 4 && this.status == 200) {
+			if((JSON.parse(this.responseText)).message == false) {
+				console.log("self destroy!");
+				destroyed = true;
+				document.getElementById('brdwy').innerHTML = '';
+			}
+		}
+	}
+
+	// TODO http fehler abfangen... sind unerheblich
+	if(mode)
+		xmlhttp.open('PUT', 'https://augtention.com/api/' + uid, true); //false --> synchrone			
+	else
+		xmlhttp.open('PUT', 'https://augtention.com/api/' + uid + '?probe=1', true); //false --> synchrone			
+		
+	xmlhttp.send(null);	
+}
+
+function probeAlive(mode) {
+
+    //get userid
+	let uid = '';
+	let name = 'uid=';
+	let decodedCookie = decodeURIComponent(document.cookie);
+	let ca = decodedCookie.split(';');
+	let i = 0;
+	while (i < ca.length && uid === '') {
+		var c = ca[i];
+		while (c.charAt(0) == ' ') c = c.substring(1);
+		if (c.indexOf(name) == 0) uid = c.substring(name.length, c.length); // +1 -1 neede
+		i++;
+	}
+	
+	//let cstring = document.cookie.split(';');
+	//let uid = cstring[0].substring(4); //4 is length of uid=
+	console.log('broadway uid: ' + uid + ' disconnected ' + disconnected + ' inputSocket ' + inputSocket);
+	
+	if(uid != '' && uid != null && uid != 'null' ) {
+		putAlive(uid, mode);
+	} else
+		console.log('broadway: bad uid');
+}
+
+function isAlive() {
+	probeAlive(true);
+}
+
+function checkAlive() {
+	probeAlive(false);
+}
 
 var brwAliveTimer = setInterval(() => {
 	
-	if (sentInputCnt > 0) {
+	if (sentInputCnt > 0 && !destroyed) {
 		//user is still active
 		sentInputCnt = 0;
 		inactiveCnt = 0;
 		
-	    //get userid
-		let uid = '';
-		let name = 'uid=';
-		let decodedCookie = decodeURIComponent(document.cookie);
-		let ca = decodedCookie.split(';');
-		let i = 0;
-		while (i < ca.length && uid === '') {
-			var c = ca[i];
-			while (c.charAt(0) == ' ') c = c.substring(1);
-			if (c.indexOf(name) == 0) uid = c.substring(name.length, c.length); // +1 -1 neede
-			i++;
-		}
-	
-		//let cstring = document.cookie.split(';');
-		//let uid = cstring[0].substring(4); //4 is length of uid=
-		console.log('broadway uid: ' + uid + ' disconnected ' + disconnected + ' inputSocket ' + inputSocket);
-	
-		if(uid != '' && uid != null && uid != 'null' ) {
-			if (window.XMLHttpRequest) {
-				// code for IE7+, Firefox, Chrome, Opera, Safari
-				xmlhttp=new XMLHttpRequest();
-			} else {
-				// code for IE6, IE5
-				xmlhttp=new ActiveXObject('Microsoft.XMLHTTP');
-			}
+		isAlive();
 
-			// [TODO: http to https]   TODO http fehler abfangen... sind unerheblich
-			xmlhttp.open('PUT', 'http://augtention.com/api/' + uid, true); //false --> synchrone			
-			
-			// Handle ready state changes ( ignore them until readyState = 4 )
-			xmlhttp.onreadystatechange= function() { if (xmlhttp.readyState!=4) { return false;} }
-
-			xmlhttp.send(null);	
-		} else
-			console.log('broadway: bad uid');
-
-	} else {
+	} else if (!destroyed) {
 		if (inactiveCnt == 8 && inputSocket) { // 8* 15 sec = 2 minutes --> augtcontrol: 3 minutes (= 12 * 15 sec)
+			//wait until user reacts
+            let startS = new Date();
 			alert("Warning:\naugtention's browsing session could be closed soon due to user's inactivity");
-			sentInputCnt = 1;
+            let endS = new Date();
+			let diffS = (endS - startS) / 1000;
+			console.log('diff in time ' + diffS);
+			if (diffS < 0.4 || diffS >= 60) {//60 see above   // 0.4 to handle the case alert is disabled
+				console.log("self destroy!");
+				destroyed = true;
+				document.getElementById('brdwy').innerHTML = '';
+				sentInputCnt = 0;
+			} else		
+				sentInputCnt = 1;
+			
 			inactiveCnt = 0;
+		} else if (inactiveCnt >= 8 && !inputSocket) {//see above
+			//check rightaway whether seat is still there. If not: a self destruction is triggered
+			checkAlive();
+			
+			inactiveCnt++;			
 		} else
 			inactiveCnt++;
 	}
