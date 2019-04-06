@@ -168,15 +168,12 @@ var positionIndex = 0;
 function cmdCreateSurface(id, x, y, width, height, isTemp)
 {
 	//CHB to avoid duplicated canvas generation
-console.log("cmdCreateSurface; disconnected = ", disconnected);  	
 	if(disconnected){
-console.log("cmdCreateSurface: disconnected true -> false");
       restackWindows();
 	  while(stackingOrder.length > 0) {
 	    var surface = stackingOrder[stackingOrder.length -1];
 		cmdDeleteSurface(surface.toplevelElement.style.zIndex);
       }
-	
 	  disconnected = false;
     }	
 	//eof CHB
@@ -587,8 +584,7 @@ function handleCommands(cmd)
 	lastSerial = cmd.get_32();
 	switch (command) {
 	case 'D':
-	    //alert ("disconnected"); //CHB test
-console.log("Disconnected D -> inputSocket null ", inputSocket);
+		flipMarker(false);//CHB added
 	    //ws.close(); //CHB
 	    inputSocket = null;
 	    break;
@@ -605,7 +601,6 @@ console.log("Disconnected D -> inputSocket null ", inputSocket);
 		//CHB
 		if(id == 1 && !sclDetermined) {
 			scl = window.innerWidth / w; //w of id 1 contains size of base surface  //scltmp * not needed here
-			console.log('id = 1 : ' + window.innerWidth +' '+ w +' '+ window.innerHeight +' '+ h +' '+ scl+ ' ' + scltmp);
 			sclDetermined = true;
 		}
 	    cmdCreateSurface(id, x*scl, y*scl, w*scl, h*scl, isTemp);
@@ -2793,22 +2788,29 @@ function start()
 }
 
 //CHB
+function flipMarker(green)
+{
+	if(green) {
+		document.getElementsByTagName('img')[1].style.visibility = "hidden";
+		document.getElementsByTagName('img')[0].style.visibility = "visible";		
+	} else {
+		document.getElementsByTagName('img')[1].style.visibility = "visible";		
+		document.getElementsByTagName('img')[0].style.visibility = "hidden";
+	}
+}
+
 function refocus()
 {
   if(inputSocket == null) {
     disconnected = true;
-console.log("refocus -> connect; disconnected, ws, inputSocket "+ disconnected+ ws+ inputSocket);  
     if(ws) ws.close();
+	flipMarker(false);
 	connect();
   } 
   
   if(document.getElementById('overlay')!=document.activeElement)
     document.activeElement.blur();
 
-//else {
-//	disconnected =  false;
-//	sendInput ("c", []);
-//  }
 }
 
 function initialfocus()
@@ -2818,12 +2820,11 @@ function initialfocus()
 
   if(inputSocket == null) {
     disconnected = true;
-console.log("initialfocus -> connect; disconnected, ws, inputSocket "+ disconnected+ ws+ inputSocket);  
     if (ws) ws.close();
+	flipMarker(false);
 	connect();
   } else {
 	disconnected =  false;
-console.log("initialfocus -> sendInput; disconnected, ws, inputSocket ", disconnected, ws, inputSocket);  
 	sendInput ("c", []);
   }
 }
@@ -2872,28 +2873,21 @@ function connect()
     var loc = window.location.toString().replace("https:", "wss:").replace("http:", "ws:");  //CHB gedreht: erst https
     loc = loc.substr(0, loc.lastIndexOf('/')) + "/socket";
     ws = new WebSocket(loc, "broadway"); //CHB var added [removed?]
+	flipMarker(true);//added
     ws.binaryType = "arraybuffer";
 
     ws.onopen = function() {
-	inputSocket = ws;
-	sendInput ("c", []);//CHB added
-
-//sendInput ("K", [0, lastState]);//???
-
-console.log("onopen: inputSocket -> ws; ws, disconnected = "+ ws+ disconnected);
+		inputSocket = ws;
+		sendInput ("c", []);//CHB added
+		flipMarker(true);//CHB added
     };
     ws.onclose = function(e) {
-//	if (inputSocket != null) { //CHB test
-//	    alert ("disconnected");
-//	}
-		console.log("onclose : inputSocket remains; disconnected = ", disconnected, e, ws);
 		if(!ws || ws.readyState != 1) { //CHB inserted: onclose is thrown for "no" reason... keep on going
-			console.log("onclose: no ws or readystate != 1: unexpected close", ws);
 			inputSocket = null;
 		}
     };
     ws.onmessage = function(event) {
-	handleMessage(event.data);
+		handleMessage(event.data);
     };
 	//CHB
 	ws.onerror = function() {
@@ -2973,7 +2967,6 @@ function putAlive(uid, mode) {
 	xmlhttp.onreadystatechange = function() { 
 		if (this.readyState == 4 && this.status == 200) {
 			if((JSON.parse(this.responseText)).message == false) {
-				console.log("self destroy!");
 				destroyed = true;
 				document.getElementById('brdwy').innerHTML = '';
 			}
@@ -3003,10 +2996,6 @@ function probeAlive(mode) {
 		if (c.indexOf(name) == 0) uid = c.substring(name.length, c.length); // +1 -1 neede
 		i++;
 	}
-	
-	//let cstring = document.cookie.split(';');
-	//let uid = cstring[0].substring(4); //4 is length of uid=
-	console.log('broadway uid: ' + uid + ' disconnected ' + disconnected + ' inputSocket ' + inputSocket);
 	
 	if(uid != '' && uid != null && uid != 'null' ) {
 		putAlive(uid, mode);
@@ -3038,9 +3027,8 @@ var brwAliveTimer = setInterval(() => {
 			alert("Warning:\naugtention's browsing session could be closed soon due to user's inactivity");
             let endS = new Date();
 			let diffS = (endS - startS) / 1000;
-			console.log('diff in time ' + diffS);
+			
 			if (diffS < 0.4 || diffS >= 60) {//60 see above   // 0.4 to handle the case alert is disabled
-				console.log("self destroy!");
 				destroyed = true;
 				document.getElementById('brdwy').innerHTML = '';
 				sentInputCnt = 0;
