@@ -502,7 +502,7 @@ function decodeBuffer(context, oldData, w, h, data, debug)
 
                 break;
 
-            case 0x40: // Delta run
+            case 0x40: // Delta run 
                 len = (r & 0xf) << 16 | g << 8 | b;
                 //log("Got delta run, len: " + len);
 
