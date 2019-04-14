@@ -158,10 +158,10 @@ function getButtonMask (button) {
 
 function sendConfigureNotify(surface)
 {
-    sendInput("w", [surface.id, Math.ceil(surface.x/scl), //CHB Math.ceil(.../scl)
-	                            Math.ceil(surface.y/scl), //CHB Math.ceil(.../scl)
-								Math.ceil(surface.width/scl), //CHB Math.ceil(.../scl)
-								Math.ceil(surface.height/scl)]); //CHB Math.ceil(.../scl)	
+    sendInput("w", [surface.id, Math.floor(surface.x/scl), //CHB Math.floor(.../scl)
+	                            Math.floor(surface.y/scl), //CHB Math.floor(.../scl)
+								Math.floor(surface.width/scl), //CHB Math.floor(.../scl)
+								Math.floor(surface.height/scl)]); //CHB Math.floor(.../scl)	
 }
 
 var positionIndex = 0;
@@ -569,7 +569,8 @@ function cmdUngrabPointer()
 }
 
 var touchIdCnt=1; //CHB
-
+var cmdold='';//CHB test
+var tst='';//CHB test
 var active = false;
 function handleCommands(cmd)
 {
@@ -582,6 +583,12 @@ function handleCommands(cmd)
 	var id, x, y, w, h, q;
 	var command = cmd.get_char();
 	lastSerial = cmd.get_32();
+	
+if(command != cmdold) {//CHB test
+	console.log('handeCommands: ' + command +' '+ new Uint8Array(cmd));
+	cmdold=command;
+}
+	
 	switch (command) {
 	case 'D':
 		flipMarker(false);//CHB added
@@ -592,10 +599,10 @@ function handleCommands(cmd)
 	case 's': // create new surface
 	    id = cmd.get_16();
 		let scltmp = cmd.get_16s() / 100; //CHB  currently not needed
-	    x = Math.ceil(cmd.get_16s());
-	    y = Math.ceil(cmd.get_16s());
-	    w = Math.ceil(cmd.get_16());
-	    h = Math.ceil(cmd.get_16());
+	    x = Math.floor(cmd.get_16s());
+	    y = Math.floor(cmd.get_16s());
+	    w = Math.floor(cmd.get_16());
+	    h = Math.floor(cmd.get_16());
 	    var isTemp = cmd.get_bool();
 	    //cmdCreateSurface(id, x, y, w, h, isTemp);  CHB
 		//CHB
@@ -633,13 +640,13 @@ function handleCommands(cmd)
 	    var ops = cmd.get_flags();
 	    var has_pos = ops & 1;
 	    if (has_pos) {
-		x = Math.ceil(cmd.get_16s()*scl); //CHB Math.ceil(...*scl)
-		y = Math.ceil(cmd.get_16s()*scl); //CHB Math.ceil(...*scl)
+		x = Math.floor(cmd.get_16s()*scl); //CHB Math.floor(...*scl)
+		y = Math.floor(cmd.get_16s()*scl); //CHB Math.floor(...*scl)
 	    }
 	    var has_size = ops & 2;
 	    if (has_size) {
-		w = Math.ceil(cmd.get_16s()*scl); //CHB Math.ceil(...*scl)
-		h = Math.ceil(cmd.get_16s()*scl); //CHB Math.ceil(...*scl)
+		w = Math.floor(cmd.get_16s()*scl); //CHB Math.floor(...*scl)
+		h = Math.floor(cmd.get_16s()*scl); //CHB Math.floor(...*scl)
 	    }
 	    cmdMoveResizeSurface(id, has_pos, x, y, has_size, w, h);
 	    break;
@@ -656,8 +663,8 @@ function handleCommands(cmd)
 
 	case 'b': // Put image buffer
 	    id = cmd.get_16();
-	    w = Math.ceil(cmd.get_16s()*scl); //CHB Math.ceil(...*scl)
-	    h = Math.ceil(cmd.get_16s()*scl); //CHB Math.ceil(...*scl)
+	    w = Math.floor(cmd.get_16s()*scl); //CHB Math.floor(...*scl)
+	    h = Math.floor(cmd.get_16s()*scl); //CHB Math.floor(...*scl)
             var data = cmd.get_data();
             cmdPutBuffer(id, w, h, data);
             break;
@@ -770,10 +777,14 @@ function getSurfaceId(ev) {
 	return surface.id;
     return 0;
 }
-
+var cmdold2='';//CHB test
 function sendInput(cmd, args)
 {
 	sentInputCnt++; //CHB
+if(cmdold2 != cmd){//CHB test
+	console.log('SendInput '+cmd +' '+ args + ' ' + sentInputCnt+ ' '+inputSocket);
+	cmdold2=cmd;
+}
     if (inputSocket == null)
         return;
 
@@ -855,10 +866,10 @@ function onMouseMove (ev) {
     var id = getSurfaceId(ev);
     id = getEffectiveEventTarget (id);
     var pos = getPositionsFromEvent(ev, id);
-    sendInput ("m", [realWindowWithMouse, id, Math.ceil(pos.rootX/scl), //CHB Math.ceil(.../scl)
-	                                          Math.ceil(pos.rootY/scl), //CHB Math.ceil(.../scl)
-											  Math.ceil(pos.winX/scl), //CHB Math.ceil(.../scl)
-											  Math.ceil(pos.winY/scl), //CHB Math.ceil(.../scl)
+    sendInput ("m", [realWindowWithMouse, id, Math.floor(pos.rootX/scl), //CHB Math.floor(.../scl)
+	                                          Math.floor(pos.rootY/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winX/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winY/scl), //CHB Math.floor(.../scl)
 											  lastState]);
 }
 
@@ -871,10 +882,10 @@ function onMouseOver (ev) {
     var pos = getPositionsFromEvent(ev, id);
     windowWithMouse = id;
     if (windowWithMouse != 0) {
-	sendInput ("e", [realWindowWithMouse, id, Math.ceil(pos.rootX/scl), //CHB Math.ceil(.../scl)
-	                                          Math.ceil(pos.rootY/scl), //CHB Math.ceil(.../scl)
-											  Math.ceil(pos.winX/scl), //CHB Math.ceil(.../scl)
-											  Math.ceil(pos.winY/scl), //CHB Math.ceil(.../scl)
+	sendInput ("e", [realWindowWithMouse, id, Math.floor(pos.rootX/scl), //CHB Math.floor(.../scl)
+	                                          Math.floor(pos.rootY/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winX/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winY/scl), //CHB Math.floor(.../scl)
 											  lastState, GDK_CROSSING_NORMAL]);
     }
 }
@@ -887,10 +898,10 @@ function onMouseOut (ev) {
     var pos = getPositionsFromEvent(ev, id);
 
     if (id != 0) {
-	sendInput ("l", [realWindowWithMouse, id, Math.ceil(pos.rootX/scl), //CHB Math.ceil(.../scl)
-	                                          Math.ceil(pos.rootY/scl), //CHB Math.ceil(.../scl)
-											  Math.ceil(pos.winX/scl), //CHB Math.ceil(.../scl)
-											  Math.ceil(pos.winY/scl), //CHB Math.ceil(.../scl)
+	sendInput ("l", [realWindowWithMouse, id, Math.floor(pos.rootX/scl), //CHB Math.floor(.../scl)
+	                                          Math.floor(pos.rootY/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winX/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winY/scl), //CHB Math.floor(.../scl)
 											  lastState, GDK_CROSSING_NORMAL]);
     }
     realWindowWithMouse = 0;
@@ -898,23 +909,24 @@ function onMouseOut (ev) {
 }
 
 function doGrab(id, ownerEvents, implicit) {
+//alert('doGrab');console.log('doGrab');tst='';//CHB test
     var pos;
 
     if (windowWithMouse != id) {
 	if (windowWithMouse != 0) {
 	    pos = getPositionsFromAbsCoord(lastX, lastY, windowWithMouse);
 	    sendInput ("l", [realWindowWithMouse, windowWithMouse, 
-		                                      Math.ceil(pos.rootX/scl), //CHB Math.ceil(.../scl)
-	                                          Math.ceil(pos.rootY/scl), //CHB Math.ceil(.../scl)
-											  Math.ceil(pos.winX/scl), //CHB Math.ceil(.../scl)
-											  Math.ceil(pos.winY/scl), //CHB Math.ceil(.../scl)
+		                                      Math.floor(pos.rootX/scl), //CHB Math.floor(.../scl)
+	                                          Math.floor(pos.rootY/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winX/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winY/scl), //CHB Math.floor(.../scl)
 											  lastState, GDK_CROSSING_GRAB]);
 	}
 	pos = getPositionsFromAbsCoord(lastX, lastY, id);
-	sendInput ("e", [realWindowWithMouse, id, Math.ceil(pos.rootX/scl), //CHB Math.ceil(.../scl)
-	                                          Math.ceil(pos.rootY/scl), //CHB Math.ceil(.../scl)
-											  Math.ceil(pos.winX/scl), //CHB Math.ceil(.../scl)
-											  Math.ceil(pos.winY/scl), //CHB Math.ceil(.../scl)
+	sendInput ("e", [realWindowWithMouse, id, Math.floor(pos.rootX/scl), //CHB Math.floor(.../scl)
+	                                          Math.floor(pos.rootY/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winX/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winY/scl), //CHB Math.floor(.../scl)
 											  lastState, GDK_CROSSING_GRAB]);
 	windowWithMouse = id;
     }
@@ -925,32 +937,35 @@ function doGrab(id, ownerEvents, implicit) {
 }
 
 function doUngrab() {
+//alert('doUngrab');console.log('doUngrab');//CHB test	
     var pos;
     if (realWindowWithMouse != windowWithMouse) {
 	if (windowWithMouse != 0) {
 	    pos = getPositionsFromAbsCoord(lastX, lastY, windowWithMouse);
 	    sendInput ("l", [realWindowWithMouse, windowWithMouse, 
-		                                      Math.ceil(pos.rootX/scl), //CHB Math.ceil(.../scl)
-	                                          Math.ceil(pos.rootY/scl), //CHB Math.ceil(.../scl)
-											  Math.ceil(pos.winX/scl), //CHB Math.ceil(.../scl)
-											  Math.ceil(pos.winY/scl), //CHB Math.ceil(.../scl)
+		                                      Math.floor(pos.rootX/scl), //CHB Math.floor(.../scl)
+	                                          Math.floor(pos.rootY/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winX/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winY/scl), //CHB Math.floor(.../scl)
 											  lastState, GDK_CROSSING_UNGRAB]);
 	}
 	if (realWindowWithMouse != 0) {
 	    pos = getPositionsFromAbsCoord(lastX, lastY, realWindowWithMouse);
 	    sendInput ("e", [realWindowWithMouse, realWindowWithMouse, 
-		                                      Math.ceil(pos.rootX/scl), //CHB Math.ceil(.../scl)
-	                                          Math.ceil(pos.rootY/scl), //CHB Math.ceil(.../scl)
-											  Math.ceil(pos.winX/scl), //CHB Math.ceil(.../scl)
-											  Math.ceil(pos.winY/scl), //CHB Math.ceil(.../scl)
+		                                      Math.floor(pos.rootX/scl), //CHB Math.floor(.../scl)
+	                                          Math.floor(pos.rootY/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winX/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winY/scl), //CHB Math.floor(.../scl)
 											  lastState, GDK_CROSSING_UNGRAB]);
 	}
 	windowWithMouse = realWindowWithMouse;
     }
     grab.window = null;
+	console.log(tst);tst='';//CHB test
 }
 
 function onMouseDown (ev) {
+console.log('onMouseDown');//CHB test
     updateForEvent(ev);
     var button = ev.button + 1;
     lastState = lastState | getButtonMask (button);
@@ -960,15 +975,17 @@ function onMouseDown (ev) {
     var pos = getPositionsFromEvent(ev, id);
     if (grab.window == null)
 	doGrab (id, false, true);
-    sendInput ("b", [realWindowWithMouse, id, Math.ceil(pos.rootX/scl), //CHB Math.ceil(.../scl)
-	                                          Math.ceil(pos.rootY/scl), //CHB Math.ceil(.../scl)
-											  Math.ceil(pos.winX/scl), //CHB Math.ceil(.../scl)
-											  Math.ceil(pos.winY/scl), //CHB Math.ceil(.../scl)
+	tst=tst+'\nMouseDown ' + 'b ' + realWindowWithMouse+' '+id+' '+lastState+' '+button;//CHB test
+    sendInput ("b", [realWindowWithMouse, id, Math.floor(pos.rootX/scl), //CHB Math.floor(.../scl)
+	                                          Math.floor(pos.rootY/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winX/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winY/scl), //CHB Math.floor(.../scl)
 											  lastState, button]);
     return false;
 }
 
 function onMouseUp (ev) {
+console.log('onMouseUp');//CHB test
     updateForEvent(ev);
     var button = ev.button + 1;
     lastState = lastState & ~getButtonMask (button);
@@ -976,10 +993,11 @@ function onMouseUp (ev) {
     id = getEffectiveEventTarget (evId);
     var pos = getPositionsFromEvent(ev, id);
 
-    sendInput ("B", [realWindowWithMouse, id, Math.ceil(pos.rootX/scl), //CHB Math.ceil(.../scl)
-	                                          Math.ceil(pos.rootY/scl), //CHB Math.ceil(.../scl)
-											  Math.ceil(pos.winX/scl), //CHB Math.ceil(.../scl)
-											  Math.ceil(pos.winY/scl), //CHB Math.ceil(.../scl)
+	tst=tst+'\nMouseUp ' + 'B ' + realWindowWithMouse+' '+id+' '+lastState+' '+button;//CHB test
+    sendInput ("B", [realWindowWithMouse, id, Math.floor(pos.rootX/scl), //CHB Math.floor(.../scl)
+	                                          Math.floor(pos.rootY/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winX/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winY/scl), //CHB Math.floor(.../scl)
 											  lastState, button]);
 
     if (grab.window != null && grab.implicit)
@@ -2451,7 +2469,6 @@ function ignoreKeyEvent(ev) {
 
 function handleKeyDown(e) {
     var fev = null, ev = (e ? e : window.event), keysym = null, suppress = false;
-//alert('handleKeyDown');	
 
     fev = copyKeyEvent(ev);
 
@@ -2491,7 +2508,6 @@ function handleKeyDown(e) {
 
 function handleKeyPress(e) {
     var ev = (e ? e : window.event), kdlen = keyDownList.length, keysym = null;
-//alert('handleKeyPress');	
 
     if (((ev.which !== "undefined") && (ev.which === 0)) ||
 	getKeysymSpecial(ev)) {
@@ -2528,7 +2544,6 @@ function handleKeyUp(e) {
 	//CHB
 	var keysym;
     var kdlen = keyDownList.length;
-//alert('handleKeyUp');	
 	
     var fev = null, ev = (e ? e : window.event); //CHB keysym moved to above, i removed as not being used
 
@@ -2589,10 +2604,10 @@ function onMouseWheel(ev)
     var dir = 0;
     if (offset > 0)
 	dir = 1;
-    sendInput ("s", [realWindowWithMouse, id, Math.ceil(pos.rootX/scl), //CHB Math.ceil(.../scl)
-	                                          Math.ceil(pos.rootY/scl), //CHB Math.ceil(.../scl)
-											  Math.ceil(pos.winX/scl), //CHB Math.ceil(.../scl)
-											  Math.ceil(pos.winY/scl), //CHB Math.ceil(.../scl)
+    sendInput ("s", [realWindowWithMouse, id, Math.floor(pos.rootX/scl), //CHB Math.floor(.../scl)
+	                                          Math.floor(pos.rootY/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winX/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winY/scl), //CHB Math.floor(.../scl)
 											  lastState, dir]);
 
     return cancelEvent(ev);
@@ -2603,7 +2618,7 @@ function onTouchStart(ev) {
 
     updateKeyboardStatus();
     updateForEvent(ev);
-			
+		
     //for (var i = 0; i < ev.changedTouches.length; i++) { CHB
 	//CHB
     if(ev.changedTouches.length > 1)
@@ -2618,55 +2633,73 @@ function onTouchStart(ev) {
         var pos = getPositionsFromEvent(touch, id);
         var isEmulated = 0;
 
+		/*CHB test
+		if (grab.window == null)
+		doGrab (id, false, true);
+		//eof CHB*/
+		
         if (firstTouchDownId == null) {
 			firstTouchDownId = touchIdCnt; //CHB  touch.identifier;
             isEmulated = 1;
 
+			//CHB ipad hack
+			tst=tst+'\nCtouchStart ' + 't ' + '1'+' '+id+' '+lastState;//CHB test
+            sendInput ("t", [1, id,
+                             touchIdCnt-1,
+                             isEmulated, Math.floor(pos.rootX/scl), //CHB Math.floor(.../scl)
+	                                          Math.floor(pos.rootY/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winX/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winY/scl), //CHB Math.floor(.../scl)
+											  lastState]);
+			tst=tst+'\nDtouchStart ' + 't ' + '2'+' '+id+' '+lastState;//CHB test
+            sendInput ("t", [2, id,
+                             touchIdCnt-1,
+                             isEmulated, Math.floor(pos.rootX/scl), //CHB Math.floor(.../scl)
+	                                          Math.floor(pos.rootY/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winX/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winY/scl), //CHB Math.floor(.../scl)
+											  lastState]);
+            //eof CHB
+			
             if (realWindowWithMouse != origId || id != windowWithMouse) {
                 if (id != 0) {
+					tst=tst+'\nAtouchStart ' + 'l ' + realWindowWithMouse+' '+id+' '+lastState;//CHB test
                     sendInput ("l", [realWindowWithMouse, id, 
-					                          Math.ceil(pos.rootX/scl), //CHB Math.ceil(.../scl)
-	                                          Math.ceil(pos.rootY/scl), //CHB Math.ceil(.../scl)
-											  Math.ceil(pos.winX/scl), //CHB Math.ceil(.../scl)
-											  Math.ceil(pos.winY/scl), //CHB Math.ceil(.../scl)
+					                          Math.floor(pos.rootX/scl), //CHB Math.floor(.../scl)
+	                                          Math.floor(pos.rootY/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winX/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winY/scl), //CHB Math.floor(.../scl)
 											  lastState, GDK_CROSSING_NORMAL]);
                 }
 
                 windowWithMouse = id;
                 realWindowWithMouse = origId;
-				
-                sendInput ("e", [origId, id,  Math.ceil(pos.rootX/scl), //CHB Math.ceil(.../scl)
-	                                          Math.ceil(pos.rootY/scl), //CHB Math.ceil(.../scl)
-											  Math.ceil(pos.winX/scl), //CHB Math.ceil(.../scl)
-											  Math.ceil(pos.winY/scl), //CHB Math.ceil(.../scl)
+				tst=tst+'\nBtouchStart ' + 'e ' + realWindowWithMouse+' '+id+' '+lastState;//CHB test				
+                sendInput ("e", [origId, id,  Math.floor(pos.rootX/scl), //CHB Math.floor(.../scl)
+	                                          Math.floor(pos.rootY/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winX/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winY/scl), //CHB Math.floor(.../scl)
 											  lastState, GDK_CROSSING_NORMAL]);
+				//CHB test added
+				tst=tst+'\nBBtouchStart ' + 'm ' + realWindowWithMouse+' '+id+' '+lastState;//CHB test				
+				sendInput ("m", [origId, id, Math.floor(pos.rootX/scl), //CHB Math.floor(.../scl)
+	                                          Math.floor(pos.rootY/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winX/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winY/scl), //CHB Math.floor(.../scl)
+											  lastState]);
+				//eof CHB		  
             }
 			
-			
-			//CHB ipad hack
-            sendInput ("t", [1, id,
-                             touchIdCnt-1,
-                             isEmulated, Math.ceil(pos.rootX/scl), //CHB Math.ceil(.../scl)
-	                                          Math.ceil(pos.rootY/scl), //CHB Math.ceil(.../scl)
-											  Math.ceil(pos.winX/scl), //CHB Math.ceil(.../scl)
-											  Math.ceil(pos.winY/scl), //CHB Math.ceil(.../scl)
-											  lastState]);
-            sendInput ("t", [2, id,
-                             touchIdCnt-1,
-                             isEmulated, Math.ceil(pos.rootX/scl), //CHB Math.ceil(.../scl)
-	                                          Math.ceil(pos.rootY/scl), //CHB Math.ceil(.../scl)
-											  Math.ceil(pos.winX/scl), //CHB Math.ceil(.../scl)
-											  Math.ceil(pos.winY/scl), //CHB Math.ceil(.../scl)
-											  lastState]);
-            //eof CHB
+			//CHB: previous location of ipad hack above ... adapted
         }
 
+		tst=tst+'\nEtouchStart ' + 't ' + '0'+' '+id+' '+lastState;//CHB test
         sendInput ("t", [0, id, 
 						 touchIdCnt, //CHB touch.identifier,
-						 isEmulated, Math.ceil(pos.rootX/scl), //CHB Math.ceil(.../scl)
-	                                          Math.ceil(pos.rootY/scl), //CHB Math.ceil(.../scl)
-											  Math.ceil(pos.winX/scl), //CHB Math.ceil(.../scl)
-											  Math.ceil(pos.winY/scl), //CHB Math.ceil(.../scl)
+						 isEmulated, Math.floor(pos.rootX/scl), //CHB Math.floor(.../scl)
+	                                          Math.floor(pos.rootY/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winX/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winY/scl), //CHB Math.floor(.../scl)
 											  lastState]);
     }
 }
@@ -2695,12 +2728,13 @@ function onTouchMove(ev) {
             isEmulated = 1;
         }
 
+		tst=tst+'\ntouchMove ' + 't ' + '1'+' '+id+' '+lastState;//CHB test
         sendInput ("t", [1, id, 
                          touchIdCnt, //CHB  touch.identifier,
-		                 isEmulated, Math.ceil(pos.rootX/scl), //CHB Math.ceil(.../scl)
-	                                          Math.ceil(pos.rootY/scl), //CHB Math.ceil(.../scl)
-											  Math.ceil(pos.winX/scl), //CHB Math.ceil(.../scl)
-											  Math.ceil(pos.winY/scl), //CHB Math.ceil(.../scl)
+		                 isEmulated, Math.floor(pos.rootX/scl), //CHB Math.floor(.../scl)
+	                                          Math.floor(pos.rootY/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winX/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winY/scl), //CHB Math.floor(.../scl)
 											  lastState]);
     }
 }
@@ -2729,16 +2763,21 @@ function onTouchEnd(ev) {
             isEmulated = 1;
             firstTouchDownId = null;
         }
-
+		tst=tst+'\ntouchEnd ' + 't ' + '2'+' '+id+' '+lastState;//CHB test
         sendInput ("t", [2, id, 
                          touchIdCnt, //CHB touch.identifier,
-                         isEmulated, Math.ceil(pos.rootX/scl), //CHB Math.ceil(.../scl)
-	                                          Math.ceil(pos.rootY/scl), //CHB Math.ceil(.../scl)
-											  Math.ceil(pos.winX/scl), //CHB Math.ceil(.../scl)
-											  Math.ceil(pos.winY/scl), //CHB Math.ceil(.../scl)
+                         isEmulated, Math.floor(pos.rootX/scl), //CHB Math.floor(.../scl)
+	                                          Math.floor(pos.rootY/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winX/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winY/scl), //CHB Math.floor(.../scl)
 											  lastState]);
                 
 		if (firstTouchDownId == null) touchIdCnt++; //CHB
+		
+		/*CHB test
+		if (grab.window != null && grab.implicit)
+	    doUngrab();
+		//eof CHB test*/
     }
 }
 

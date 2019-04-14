@@ -329,7 +329,8 @@ is_pointer_event (BroadwayInputMsg *message)
     message->base.type == BROADWAY_EVENT_SCROLL ||
     message->base.type == BROADWAY_EVENT_GRAB_NOTIFY ||
     message->base.type == BROADWAY_EVENT_UNGRAB_NOTIFY||
-	message->base.type == BROADWAY_EVENT_CONNECT; //CHB added
+	message->base.type == BROADWAY_EVENT_CONNECT ||//CHB added
+	message->base.type == BROADWAY_EVENT_TOUCH;//CHB touch
 }
 
 static void
@@ -416,10 +417,21 @@ parse_touch_data (guint32 *p, BroadwayInputTouchMsg *data)
   data->win_x = ntohl (*p++);
   data->win_y = ntohl (*p++);
   data->state = ntohl (*p++);
-
+  
   return p;
 }
 
+//CHB touch:  fraglich ob das der richtige Weg ist. Es gibt ein gdkEventTouch
+static void
+update_future_touch_info(BroadwayServer *server, BroadwayInputTouchMsg *data)
+{
+  server->future_root_x = data->root_x;
+  server->future_root_y = data->root_y;
+  server->future_state = data->state;
+  //server->future_mouse_in_toplevel = data->mouse_window_id;
+}
+//eof CHB
+  
 static void
 update_future_pointer_info (BroadwayServer *server, BroadwayInputPointerMsg *data)
 {
@@ -490,6 +502,7 @@ parse_input_message (BroadwayInput *input, const unsigned char *message)
 
   case BROADWAY_EVENT_TOUCH:
     p = parse_touch_data (p, &msg.touch);
+	update_future_touch_info(server, &msg.touch); //CHB touch
     break;
 
   case BROADWAY_EVENT_KEY_PRESS:
