@@ -585,7 +585,7 @@ function handleCommands(cmd)
 	lastSerial = cmd.get_32();
 	
 if(command != cmdold) {//CHB test
-	console.log('handeCommands: ' + command +' '+ new Uint8Array(cmd));
+	console.log('handleCommands: ' + command +' '+ new Uint8Array(cmd));
 	cmdold=command;
 }
 	
@@ -2642,7 +2642,7 @@ function onTouchStart(ev) {
 			firstTouchDownId = touchIdCnt; //CHB  touch.identifier;
             isEmulated = 1;
 
-			//CHB ipad hack
+			//CHB ipad hack --> moved here ...
 			tst=tst+'\nCtouchStart ' + 't ' + '1'+' '+id+' '+lastState;//CHB test
             sendInput ("t", [1, id,
                              touchIdCnt-1,
@@ -2680,14 +2680,14 @@ function onTouchStart(ev) {
 											  Math.floor(pos.winX/scl), //CHB Math.floor(.../scl)
 											  Math.floor(pos.winY/scl), //CHB Math.floor(.../scl)
 											  lastState, GDK_CROSSING_NORMAL]);
-				//CHB test added
+				/*CHB test added
 				tst=tst+'\nBBtouchStart ' + 'm ' + realWindowWithMouse+' '+id+' '+lastState;//CHB test				
 				sendInput ("m", [origId, id, Math.floor(pos.rootX/scl), //CHB Math.floor(.../scl)
 	                                          Math.floor(pos.rootY/scl), //CHB Math.floor(.../scl)
 											  Math.floor(pos.winX/scl), //CHB Math.floor(.../scl)
 											  Math.floor(pos.winY/scl), //CHB Math.floor(.../scl)
 											  lastState]);
-				//eof CHB		  
+				//eof CHB		  */
             }
 			
 			//CHB: previous location of ipad hack above ... adapted

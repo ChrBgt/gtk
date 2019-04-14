@@ -234,27 +234,7 @@ _gdk_broadway_events_got_input (BroadwayInputMsg *message)
 
         switch (message->touch.touch_type) {
         case 0:
-          event_type = GDK_TOUCH_BEGIN;
-		  
-		  //CHB touch
-		  {
-		  GdkEvent *event = NULL;
-		  
-		  event = gdk_event_new (GDK_MOTION_NOTIFY);
-	event->motion.window = g_object_ref (window);
-	event->motion.time = message->base.time;
-	event->motion.x = message->touch.win_x;
-	event->motion.y = message->touch.win_y;
-	event->motion.x_root = message->touch.root_x;
-	event->motion.y_root = message->touch.root_y;
-	event->motion.state = message->touch.state;//???
-	gdk_event_set_device (event, device_manager->core_pointer);
-
-	node = _gdk_event_queue_append (display, event);
-	_gdk_windowing_got_event (display, node, event, message->base.serial);
-		  }
-		  //eof CHB	  
-		  
+          event_type = GDK_TOUCH_BEGIN;		  
           break;
         case 1:
           event_type = GDK_TOUCH_UPDATE;
