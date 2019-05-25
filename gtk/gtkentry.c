@@ -4014,7 +4014,7 @@ gtk_entry_leave_notify (GtkWidget        *widget,
           break;
         }
     }
-
+  
   return FALSE;
 }
 
@@ -6155,6 +6155,9 @@ recompute_idle_func (gpointer data)
 
           if (handle_mode != GTK_TEXT_HANDLE_MODE_NONE)
             gtk_entry_update_handles (entry, handle_mode);
+		
+		  if(handle_mode != GTK_TEXT_HANDLE_MODE_NONE && priv->im_context) //CHB
+			gtk_im_context_focus_in(priv->im_context); 					   //CHB
         }
     }
 

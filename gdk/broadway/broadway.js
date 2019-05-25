@@ -569,8 +569,6 @@ function cmdUngrabPointer()
 }
 
 var touchIdCnt=1; //CHB
-var cmdold='';//CHB test
-var tst='';//CHB test
 var active = false;
 function handleCommands(cmd)
 {
@@ -583,11 +581,6 @@ function handleCommands(cmd)
 	var id, x, y, w, h, q;
 	var command = cmd.get_char();
 	lastSerial = cmd.get_32();
-	
-if(command != cmdold) {//CHB test
-	console.log('handleCommands: ' + command +' '+ new Uint8Array(cmd));
-	cmdold=command;
-}
 	
 	switch (command) {
 	case 'D':
@@ -777,14 +770,11 @@ function getSurfaceId(ev) {
 	return surface.id;
     return 0;
 }
-var cmdold2='';//CHB test
+
 function sendInput(cmd, args)
 {
 	sentInputCnt++; //CHB
-if(cmdold2 != cmd){//CHB test
-	console.log('SendInput '+cmd +' '+ args + ' ' + sentInputCnt+ ' '+inputSocket);
-	cmdold2=cmd;
-}
+
     if (inputSocket == null)
         return;
 
@@ -840,12 +830,11 @@ function updateKeyboardStatus() {
     if (fakeInput != null && showKeyboardChanged) {
         showKeyboardChanged = false;
         if (showKeyboard) {
-//alert('fakeInput focus');
             fakeInput.focus();
-}        else {
-//alert('fakeInput blur');
+		}
+        else {
             fakeInput.blur();
-}
+		}
     }
 }
 
@@ -909,7 +898,6 @@ function onMouseOut (ev) {
 }
 
 function doGrab(id, ownerEvents, implicit) {
-//alert('doGrab');console.log('doGrab');tst='';//CHB test
     var pos;
 
     if (windowWithMouse != id) {
@@ -937,7 +925,6 @@ function doGrab(id, ownerEvents, implicit) {
 }
 
 function doUngrab() {
-//alert('doUngrab');console.log('doUngrab');//CHB test	
     var pos;
     if (realWindowWithMouse != windowWithMouse) {
 	if (windowWithMouse != 0) {
@@ -961,11 +948,9 @@ function doUngrab() {
 	windowWithMouse = realWindowWithMouse;
     }
     grab.window = null;
-	console.log(tst);tst='';//CHB test
 }
 
 function onMouseDown (ev) {
-console.log('onMouseDown');//CHB test
     updateForEvent(ev);
     var button = ev.button + 1;
     lastState = lastState | getButtonMask (button);
@@ -975,7 +960,6 @@ console.log('onMouseDown');//CHB test
     var pos = getPositionsFromEvent(ev, id);
     if (grab.window == null)
 	doGrab (id, false, true);
-	tst=tst+'\nMouseDown ' + 'b ' + realWindowWithMouse+' '+id+' '+lastState+' '+button;//CHB test
     sendInput ("b", [realWindowWithMouse, id, Math.floor(pos.rootX/scl), //CHB Math.floor(.../scl)
 	                                          Math.floor(pos.rootY/scl), //CHB Math.floor(.../scl)
 											  Math.floor(pos.winX/scl), //CHB Math.floor(.../scl)
@@ -985,7 +969,6 @@ console.log('onMouseDown');//CHB test
 }
 
 function onMouseUp (ev) {
-console.log('onMouseUp');//CHB test
     updateForEvent(ev);
     var button = ev.button + 1;
     lastState = lastState & ~getButtonMask (button);
@@ -993,7 +976,6 @@ console.log('onMouseUp');//CHB test
     id = getEffectiveEventTarget (evId);
     var pos = getPositionsFromEvent(ev, id);
 
-	tst=tst+'\nMouseUp ' + 'B ' + realWindowWithMouse+' '+id+' '+lastState+' '+button;//CHB test
     sendInput ("B", [realWindowWithMouse, id, Math.floor(pos.rootX/scl), //CHB Math.floor(.../scl)
 	                                          Math.floor(pos.rootY/scl), //CHB Math.floor(.../scl)
 											  Math.floor(pos.winX/scl), //CHB Math.floor(.../scl)
@@ -2324,7 +2306,6 @@ function getEventKeySym(ev) {
 // with the key. The rest we pass on to keypress so we can get the
 // translated keysym.
 function getKeysymSpecial(ev) {
-//alert('getKeysymSpecial ' + ev.keyCode);//andrd 229, immer...
     if (ev.keyCode in specialKeyTable) {
 	var r = specialKeyTable[ev.keyCode];
 	var flags = 0;
@@ -2480,16 +2461,11 @@ function handleKeyDown(e) {
 	// browser behaviors or it has no corresponding keyPress
 	// event, then send it immediately
 	if (!ignoreKeyEvent(ev)) {
-//alert('handleKeyDown ' + keysym);
 	    sendInput("k", [keysym, lastState]);
-	} 
-//else 
-//alert('handleKeyDown andrd' + keysym);
+	}
 	
 	suppress = true;
     }
-//else
-//alert('handleKeyDown 0');
 
     if (! ignoreKeyEvent(ev)) {
 	// Add it to the list of depressed keys
@@ -2532,14 +2508,13 @@ function handleKeyPress(e) {
 
     // Send the translated keysym
     if (keysym > 0) {
-//alert('handleKeyPress ' + keysym);
 		sendInput ("k", [keysym, lastState]);
 	}
 	
     // Stop keypress events just in case
     return cancelEvent(ev);
 }
-var oldKeyStrLength=0; //CHB
+
 function handleKeyUp(e) {
 	//CHB
 	var keysym;
@@ -2557,7 +2532,6 @@ function handleKeyUp(e) {
     }
 	
     if (keysym > 0) {
-//alert('handleKeyUp ' + keysym);
 		sendInput ("K", [keysym, lastState]);
 	}
 	
@@ -2632,38 +2606,13 @@ function onTouchStart(ev) {
         var id = getEffectiveEventTarget (origId);
         var pos = getPositionsFromEvent(touch, id);
         var isEmulated = 0;
-
-		/*CHB test
-		if (grab.window == null)
-		doGrab (id, false, true);
-		//eof CHB*/
 		
         if (firstTouchDownId == null) {
 			firstTouchDownId = touchIdCnt; //CHB  touch.identifier;
             isEmulated = 1;
 
-			//CHB ipad hack --> moved here ...
-			tst=tst+'\nCtouchStart ' + 't ' + '1'+' '+id+' '+lastState;//CHB test
-            sendInput ("t", [1, id,
-                             touchIdCnt-1,
-                             isEmulated, Math.floor(pos.rootX/scl), //CHB Math.floor(.../scl)
-	                                          Math.floor(pos.rootY/scl), //CHB Math.floor(.../scl)
-											  Math.floor(pos.winX/scl), //CHB Math.floor(.../scl)
-											  Math.floor(pos.winY/scl), //CHB Math.floor(.../scl)
-											  lastState]);
-			tst=tst+'\nDtouchStart ' + 't ' + '2'+' '+id+' '+lastState;//CHB test
-            sendInput ("t", [2, id,
-                             touchIdCnt-1,
-                             isEmulated, Math.floor(pos.rootX/scl), //CHB Math.floor(.../scl)
-	                                          Math.floor(pos.rootY/scl), //CHB Math.floor(.../scl)
-											  Math.floor(pos.winX/scl), //CHB Math.floor(.../scl)
-											  Math.floor(pos.winY/scl), //CHB Math.floor(.../scl)
-											  lastState]);
-            //eof CHB
-			
             if (realWindowWithMouse != origId || id != windowWithMouse) {
                 if (id != 0) {
-					tst=tst+'\nAtouchStart ' + 'l ' + realWindowWithMouse+' '+id+' '+lastState;//CHB test
                     sendInput ("l", [realWindowWithMouse, id, 
 					                          Math.floor(pos.rootX/scl), //CHB Math.floor(.../scl)
 	                                          Math.floor(pos.rootY/scl), //CHB Math.floor(.../scl)
@@ -2674,26 +2623,16 @@ function onTouchStart(ev) {
 
                 windowWithMouse = id;
                 realWindowWithMouse = origId;
-				tst=tst+'\nBtouchStart ' + 'e ' + realWindowWithMouse+' '+id+' '+lastState;//CHB test				
                 sendInput ("e", [origId, id,  Math.floor(pos.rootX/scl), //CHB Math.floor(.../scl)
 	                                          Math.floor(pos.rootY/scl), //CHB Math.floor(.../scl)
 											  Math.floor(pos.winX/scl), //CHB Math.floor(.../scl)
 											  Math.floor(pos.winY/scl), //CHB Math.floor(.../scl)
 											  lastState, GDK_CROSSING_NORMAL]);
-				/*CHB test added
-				tst=tst+'\nBBtouchStart ' + 'm ' + realWindowWithMouse+' '+id+' '+lastState;//CHB test				
-				sendInput ("m", [origId, id, Math.floor(pos.rootX/scl), //CHB Math.floor(.../scl)
-	                                          Math.floor(pos.rootY/scl), //CHB Math.floor(.../scl)
-											  Math.floor(pos.winX/scl), //CHB Math.floor(.../scl)
-											  Math.floor(pos.winY/scl), //CHB Math.floor(.../scl)
-											  lastState]);
-				//eof CHB		  */
             }
 			
 			//CHB: previous location of ipad hack above ... adapted
         }
 
-		tst=tst+'\nEtouchStart ' + 't ' + '0'+' '+id+' '+lastState;//CHB test
         sendInput ("t", [0, id, 
 						 touchIdCnt, //CHB touch.identifier,
 						 isEmulated, Math.floor(pos.rootX/scl), //CHB Math.floor(.../scl)
@@ -2728,7 +2667,6 @@ function onTouchMove(ev) {
             isEmulated = 1;
         }
 
-		tst=tst+'\ntouchMove ' + 't ' + '1'+' '+id+' '+lastState;//CHB test
         sendInput ("t", [1, id, 
                          touchIdCnt, //CHB  touch.identifier,
 		                 isEmulated, Math.floor(pos.rootX/scl), //CHB Math.floor(.../scl)
@@ -2763,7 +2701,6 @@ function onTouchEnd(ev) {
             isEmulated = 1;
             firstTouchDownId = null;
         }
-		tst=tst+'\ntouchEnd ' + 't ' + '2'+' '+id+' '+lastState;//CHB test
         sendInput ("t", [2, id, 
                          touchIdCnt, //CHB touch.identifier,
                          isEmulated, Math.floor(pos.rootX/scl), //CHB Math.floor(.../scl)
@@ -2773,11 +2710,6 @@ function onTouchEnd(ev) {
 											  lastState]);
                 
 		if (firstTouchDownId == null) touchIdCnt++; //CHB
-		
-		/*CHB test
-		if (grab.window != null && grab.implicit)
-	    doUngrab();
-		//eof CHB test*/
     }
 }
 
@@ -2938,52 +2870,41 @@ function connect()
 	andrd = /(android)/gi.test( navigator.userAgent ); //CHB
 
     if ( (iOS || andrd) && !document.getElementById('fakeinput') ) { //CHB andrd added, and check on fakeinput
-		//alert("fakeinput added");
         fakeInput = document.createElement("input");
         fakeInput.type = "text";
+		fakeInput.autocapitalize="off";//CHB
 		//fakeInput.value = ""; //CHB
 		fakeInput.id = "fakeinput"; //CHB
         fakeInput.style.position = "absolute";
-        fakeInput.style.left = "-1000px";
-        fakeInput.style.top = "-1000px";
+        fakeInput.style.left = "-1000px";//testing: "40px" live: "-1000px"
+        fakeInput.style.top = "-1000px";//testing: "0px" live: "-1000px"
 		//fakeInput.style.width = '0px';//CHB
         document.body.appendChild(fakeInput);
 		
 		//CHB
-		if(andrd) {
+		if(andrd) {	
 			document.getElementById('fakeinput').addEventListener('input', function(ev){
 				let keysym = 0;
-				let keystr = document.getElementById('fakeinput').value;
-				if (keystr.length > oldKeyStrLength) {
-					if ((keystr.length-oldKeyStrLength) == 1) {
-					
-						ev.keyCode = keystr.charCodeAt(keystr.length-1);
-						//keysym = keystr.charCodeAt(keystr.length-1);
-					
-						/* TODO...
-						if (((ev.which !== "undefined") && (ev.which === 0)) ||
-						getKeysymSpecial(ev)) {
-							return cancelEvent(ev);
-						}
-						*/
+				let keystr = ev.srcElement.value;  //  target??       
+				if (keystr.length > 0) {
+					if (keystr.length == 1) {	
+						ev.keyCode = keystr.charCodeAt(0);
 						keysym = getKeysym(ev);				
 					} else {
-						//alert(keystr.length + ' ' + oldKeyStrLength);
 						keysym = 0;
 					}
-
 					if (keysym > 0) {
 						sendInput ("k", [keysym, lastState]);
-						setTimeout(function(){ sendInput ("K", [keysym, lastState]);}, 30); //ende kommt nicht wenn nicht erfolgreich
+						setTimeout(function(){ sendInput ("K", [keysym, lastState]);}, 3); //30
 					}
+					
 				} else {
 					sendInput ("k", [65288, lastState]);//backspace
-					setTimeout(function(){ sendInput ("K", [65288, lastState]); }, 30);
+					setTimeout(function(){ sendInput ("K", [65288, lastState]); }, 3);//30
 				}
-		
-				oldKeyStrLength = keystr.length;
+				document.getElementById('fakeinput').value = '';
 			}, false);
-		}
+		}		
 		//eof CHB		
     }
 }
