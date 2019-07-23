@@ -23,7 +23,8 @@ typedef enum {
   BROADWAY_EVENT_CONFIGURE_NOTIFY = 'w',
   BROADWAY_EVENT_DELETE_NOTIFY = 'W',
   BROADWAY_EVENT_SCREEN_SIZE_CHANGED = 'd',
-  BROADWAY_EVENT_FOCUS = 'f'
+  BROADWAY_EVENT_FOCUS = 'f',
+  BROADWAY_EVENT_CONNECT = 'c' /*CHB*/
 } BroadwayEventType;
 
 typedef enum {
@@ -43,6 +44,7 @@ typedef enum {
   BROADWAY_OP_DISCONNECTED = 'D',
   BROADWAY_OP_PUT_BUFFER = 'b',
   BROADWAY_OP_SET_SHOW_KEYBOARD = 'k',
+  BROADWAY_OP_SELECTED = 'J'  /*CHB*/
 } BroadwayOpType;
 
 typedef struct {
@@ -102,6 +104,12 @@ typedef struct {
   gint32 res;
 } BroadwayInputGrabReply;
 
+//CHB
+typedef struct {
+  BroadwayInputBaseMsg base;
+} BroadwayInputConnect;
+//eof CHB
+
 typedef struct {
   BroadwayInputBaseMsg base;
   gint32 id;
@@ -141,6 +149,7 @@ typedef union {
   BroadwayInputDeleteNotify delete_notify;
   BroadwayInputScreenResizeNotify screen_resize_notify;
   BroadwayInputFocusMsg focus;
+  BroadwayInputConnect connect; //CHB added
 } BroadwayInputMsg;
 
 typedef enum {
@@ -157,7 +166,9 @@ typedef enum {
   BROADWAY_REQUEST_GRAB_POINTER,
   BROADWAY_REQUEST_UNGRAB_POINTER,
   BROADWAY_REQUEST_FOCUS_WINDOW,
-  BROADWAY_REQUEST_SET_SHOW_KEYBOARD
+  BROADWAY_REQUEST_SET_SHOW_KEYBOARD,  /* CHB , */
+  BROADWAY_REQUEST_SELECTED, /*CHB inserted*/
+  BROADWAY_REQUEST_URI_AND_TITLE /*CHB inserted*/
 } BroadwayRequestType;
 
 typedef struct {
@@ -201,6 +212,14 @@ typedef struct {
   guint32 event_mask;
   guint32 time_;
 } BroadwayRequestGrabPointer;
+
+/*CHB*/
+typedef struct {
+  BroadwayRequestBase base;
+  char name[36];
+  guint32 length;
+} BroadwayRequestTransmit;
+/*eof CHB*/
 
 typedef struct {
   BroadwayRequestBase base;
@@ -248,6 +267,8 @@ typedef union {
   BroadwayRequestTranslate translate;
   BroadwayRequestFocusWindow focus_window;
   BroadwayRequestSetShowKeyboard set_show_keyboard;
+  BroadwayRequestTransmit selected;  /*CHB*/
+  BroadwayRequestTransmit uri_and_title; /*CHB*/
 } BroadwayRequest;
 
 typedef enum {
@@ -256,7 +277,9 @@ typedef enum {
   BROADWAY_REPLY_QUERY_MOUSE,
   BROADWAY_REPLY_NEW_WINDOW,
   BROADWAY_REPLY_GRAB_POINTER,
-  BROADWAY_REPLY_UNGRAB_POINTER
+  BROADWAY_REPLY_UNGRAB_POINTER,  /* CHB , */
+  BROADWAY_REPLY_SELECTED, /*CHB inserted, required?*/
+  BROADWAY_REPLY_URI_AND_TITLE /*CHB inserted, required?*/
 } BroadwayReplyType;
 
 typedef struct {

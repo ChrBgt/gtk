@@ -43,18 +43,19 @@ struct _GdkSeatDefaultClass
   GdkSeatClass parent_class;
 };
 
-GType     gdk_seat_default_get_type     (void) G_GNUC_CONST;
+/* CHB GDK_AVAILABLE_IN_ALL added, __attribute__((visibility("default"))) added */
+GDK_AVAILABLE_IN_ALL __attribute__((visibility("default"))) GType     gdk_seat_default_get_type     (void) G_GNUC_CONST;
 
-GdkSeat * gdk_seat_default_new_for_master_pair (GdkDevice *pointer,
+GDK_AVAILABLE_IN_ALL GdkSeat * gdk_seat_default_new_for_master_pair (GdkDevice *pointer,
                                                 GdkDevice *keyboard);
 
-void      gdk_seat_default_add_slave    (GdkSeatDefault *seat,
+GDK_AVAILABLE_IN_ALL void      gdk_seat_default_add_slave    (GdkSeatDefault *seat,
                                          GdkDevice      *device);
-void      gdk_seat_default_remove_slave (GdkSeatDefault *seat,
+GDK_AVAILABLE_IN_ALL void      gdk_seat_default_remove_slave (GdkSeatDefault *seat,
                                          GdkDevice      *device);
-void      gdk_seat_default_add_tool     (GdkSeatDefault *seat,
+GDK_AVAILABLE_IN_ALL void      gdk_seat_default_add_tool     (GdkSeatDefault *seat,
                                          GdkDeviceTool  *tool);
-void      gdk_seat_default_remove_tool  (GdkSeatDefault *seat,
+GDK_AVAILABLE_IN_ALL void      gdk_seat_default_remove_tool  (GdkSeatDefault *seat,
                                          GdkDeviceTool  *tool);
-
+/* eof CHB */
 #endif /* __GDK_SEAT_DEFAULT_PRIVATE_H__ */

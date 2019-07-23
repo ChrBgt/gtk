@@ -9,6 +9,8 @@
 #include <stdio.h>
 #include <locale.h>
 
+#include <errno.h> /*CHB gio*/
+
 #include <glib.h>
 #include <gio/gio.h>
 #ifdef G_OS_UNIX
@@ -19,6 +21,8 @@
 
 BroadwayServer *server;
 GList *clients;
+#define GIOMSGMAX 500000 /*CHB*/
+gchar giomsg[GIOMSGMAX]; /*CHB*/
 
 static guint32 client_id_count = 1;
 
@@ -295,6 +299,18 @@ client_handle_request (BroadwayClient *client,
       send_reply (client, request, (BroadwayReply *)&reply_ungrab_pointer, sizeof (reply_ungrab_pointer),
 		  BROADWAY_REPLY_UNGRAB_POINTER);
       break;
+/*CHB*/
+    case BROADWAY_REQUEST_SELECTED:
+      //g_print(">>> %s ", broadway_server_transmit_selected(server,   /*CHB test */
+      //                                  request->selected.name,
+      //                                  request->selected.length));
+	  broadway_server_transmit_selected(server,
+                                        request->selected.name,
+                                        request->selected.length);
+      break;
+    case BROADWAY_REQUEST_URI_AND_TITLE:
+      break;
+/*eof CHB*/
     case BROADWAY_REQUEST_FOCUS_WINDOW:
       broadway_server_focus_window (server, request->focus_window.id);
       break;
@@ -406,7 +422,6 @@ incoming_client (GSocketService    *service,
   return TRUE;
 }
 
-
 int
 main (int argc, char *argv[])
 {
@@ -470,7 +485,7 @@ main (int argc, char *argv[])
       port = strtol (display + strlen (":tcp"), NULL, 10);
 
       inet = g_inet_address_new_from_string ("127.0.0.1");
-      g_print ("Listening on 127.0.0.1:%d\n", port + 9090);
+//      g_print ("Listening on 127.0.0.1:%d\n", port + 9090); CHB
       address = g_inet_socket_address_new (inet, port + 9090);
       g_object_unref (inet);
     }
@@ -484,7 +499,7 @@ main (int argc, char *argv[])
       path = g_build_filename (g_get_user_runtime_dir (), basename, NULL);
       g_free (basename);
 
-      g_print ("Listening on %s\n", path);
+//      g_print ("Listening on %s\n", path); CHB
       address = g_unix_socket_address_new_with_type (path, -1,
 						     G_UNIX_SOCKET_ADDRESS_ABSTRACT);
       g_free (path);
@@ -532,6 +547,7 @@ main (int argc, char *argv[])
   g_socket_service_start (G_SOCKET_SERVICE (listener));
 
   loop = g_main_loop_new (NULL, FALSE);
+  
   g_main_loop_run (loop);
   
   return 0;
@@ -560,6 +576,10 @@ get_event_size (int type)
     case BROADWAY_EVENT_GRAB_NOTIFY:
     case BROADWAY_EVENT_UNGRAB_NOTIFY:
       return sizeof (BroadwayInputGrabReply);
+//CHB
+	case BROADWAY_EVENT_CONNECT:
+	return sizeof (BroadwayInputConnect);
+//eof CHB
     case BROADWAY_EVENT_CONFIGURE_NOTIFY:
       return  sizeof (BroadwayInputConfigureNotify);
     case BROADWAY_EVENT_DELETE_NOTIFY:

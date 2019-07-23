@@ -66,4 +66,5 @@ void            broadway_output_pong            (BroadwayOutput *output);
 void            broadway_output_set_show_keyboard (BroadwayOutput *output,
                                                    gboolean show);
 
+void            broadway_output_transmit_selected (BroadwayOutput *output, gchar *text);/*CHB*/
 #endif /* __BROADWAY_H__ */

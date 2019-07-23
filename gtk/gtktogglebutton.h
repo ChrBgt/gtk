@@ -85,6 +85,11 @@ gboolean   gtk_toggle_button_get_mode          (GtkToggleButton *toggle_button);
 GDK_AVAILABLE_IN_ALL
 void       gtk_toggle_button_set_active        (GtkToggleButton *toggle_button,
                                                 gboolean         is_active);
+//CHB
+GDK_AVAILABLE_IN_ALL
+void       gtk_toggle_button_set_active_simple (GtkToggleButton *toggle_button,
+                                                gboolean         is_active);
+//eof CHB
 GDK_AVAILABLE_IN_ALL
 gboolean   gtk_toggle_button_get_active        (GtkToggleButton *toggle_button);
 GDK_AVAILABLE_IN_ALL

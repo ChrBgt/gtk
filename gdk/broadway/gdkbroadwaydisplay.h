@@ -24,6 +24,8 @@
 
 #include <gdk/gdk.h>
 
+#include <gdk/gdkdisplayprivate.h>/*CHB*/
+
 G_BEGIN_DECLS
 
 #ifdef GDK_COMPILATION

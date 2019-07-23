@@ -241,7 +241,7 @@ _gdk_broadway_events_got_input (BroadwayInputMsg *message)
 
         switch (message->touch.touch_type) {
         case 0:
-          event_type = GDK_TOUCH_BEGIN;
+          event_type = GDK_TOUCH_BEGIN;		  
           break;
         case 1:
           event_type = GDK_TOUCH_UPDATE;
@@ -309,6 +309,11 @@ _gdk_broadway_events_got_input (BroadwayInputMsg *message)
   case BROADWAY_EVENT_UNGRAB_NOTIFY:
     _gdk_display_device_grab_update (display, device_manager->core_pointer, device_manager->core_pointer, message->base.serial);
     break;
+
+  //CHB
+  case BROADWAY_EVENT_CONNECT:
+  _gdk_broadway_global_connect ();
+  //eof CHB  
 
   case BROADWAY_EVENT_CONFIGURE_NOTIFY:
     window = g_hash_table_lookup (display_broadway->id_ht, GINT_TO_POINTER (message->configure_notify.id));

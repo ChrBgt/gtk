@@ -547,7 +547,7 @@ gtk_entry_completion_constructed (GObject *object)
   g_signal_connect (priv->tree_view, "motion-notify-event",
                     G_CALLBACK (gtk_entry_completion_list_motion_notify),
                     completion);
-
+					
   gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (priv->tree_view), FALSE);
   gtk_tree_view_set_hover_selection (GTK_TREE_VIEW (priv->tree_view), TRUE);
 
@@ -588,6 +588,7 @@ gtk_entry_completion_constructed (GObject *object)
   g_signal_connect (priv->action_view, "motion-notify-event",
                     G_CALLBACK (gtk_entry_completion_list_motion_notify),
                     completion);
+
   gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (priv->action_view), FALSE);
   gtk_tree_view_set_hover_selection (GTK_TREE_VIEW (priv->action_view), TRUE);
 
@@ -616,10 +617,10 @@ gtk_entry_completion_constructed (GObject *object)
   g_signal_connect (priv->popup_window, "key-release-event",
                     G_CALLBACK (gtk_entry_completion_popup_key_event),
                     completion);
-  g_signal_connect (priv->popup_window, "button-press-event",
+  g_signal_connect (priv->popup_window, "button-release-event",//CHB button-press-event
                     G_CALLBACK (gtk_entry_completion_popup_button_press),
                     completion);
-
+					
   popup_frame = gtk_frame_new (NULL);
   gtk_frame_set_shadow_type (GTK_FRAME (popup_frame),
                              GTK_SHADOW_ETCHED_IN);
@@ -933,13 +934,72 @@ gtk_entry_completion_popup_button_press (GtkWidget      *widget,
 {
   GtkEntryCompletion *completion = GTK_ENTRY_COMPLETION (user_data);
 
+  /*CHB
   if (!gtk_widget_get_mapped (completion->priv->popup_window))
     return FALSE;
 
-  /* if we come here, it's usually time to popdown */
+  / * if we come here, it's usually time to popdown * /
   _gtk_entry_completion_popdown (completion);
+  */
+  //CHB ipad hack: react again to the GDK_BUTTON_PRESS event
+  gint y_diff;
+  GtkTreePath *path = NULL;
+  if (gtk_tree_view_get_path_at_pos (GTK_TREE_VIEW (completion->priv->tree_view),
+                                     event->x, event->y,
+                                     &path, NULL, NULL, NULL))
+    {
+      GtkTreeIter iter;
+      gboolean entry_set;
+      GtkTreeModel *model;
+      GtkTreeIter child_iter;
 
-  return TRUE;
+      gtk_tree_model_get_iter (GTK_TREE_MODEL (completion->priv->filter_model),
+                               &iter, path);
+      gtk_tree_path_free (path);
+      gtk_tree_model_filter_convert_iter_to_child_iter (completion->priv->filter_model,
+                                                        &child_iter,
+                                                        &iter);
+      model = gtk_tree_model_filter_get_model (completion->priv->filter_model);
+
+      g_signal_handler_block (completion->priv->entry,
+                              completion->priv->changed_id);
+      g_signal_emit (completion, entry_completion_signals[MATCH_SELECTED],
+                     0, model, &child_iter, &entry_set);
+      g_signal_handler_unblock (completion->priv->entry,
+                                completion->priv->changed_id);
+
+      _gtk_entry_completion_popdown (completion);
+
+      return TRUE;
+    }
+
+
+  if(path)
+	   gtk_tree_path_free (path);
+
+  path = NULL;
+
+  gtk_entry_reset_im_context (GTK_ENTRY (completion->priv->entry));	   
+
+  //CHB this part is new
+  y_diff = event->y - gtk_widget_get_allocated_height(GTK_WIDGET(completion->priv->tree_view));
+  if(y_diff < 0) y_diff = event->y;
+  //eof new part
+  
+  if (gtk_tree_view_get_path_at_pos (GTK_TREE_VIEW (completion->priv->action_view),
+                                     event->x, y_diff,//CHB y_diff is new
+                                     &path, NULL, NULL, NULL))
+    {
+      g_signal_emit (completion, entry_completion_signals[ACTION_ACTIVATED],
+                     0, gtk_tree_path_get_indices (path)[0]);
+      gtk_tree_path_free (path);
+
+      _gtk_entry_completion_popdown (completion);
+      return TRUE;
+    }
+    
+  return FALSE;
+  //eof CHB
 }
 
 static gboolean

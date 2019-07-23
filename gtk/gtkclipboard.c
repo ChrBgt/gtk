@@ -35,6 +35,7 @@
 
 #ifdef GDK_WINDOWING_BROADWAY
 #include "broadway/gdkbroadway.h"
+#include "gtkselectionprivate.h"  /*CHB*/
 #endif
 
 #ifdef GDK_WINDOWING_WIN32
@@ -668,17 +669,39 @@ gtk_clipboard_set_with_data (GtkClipboard          *clipboard,
 			     GtkClipboardClearFunc  clear_func,
 			     gpointer               user_data)
 {
+  gboolean ret; GtkSelectionData selection_data;/*CHB*/
+  
   g_return_val_if_fail (clipboard != NULL, FALSE);
   g_return_val_if_fail (targets != NULL, FALSE);
   g_return_val_if_fail (get_func != NULL, FALSE);
 
-  return GTK_CLIPBOARD_GET_CLASS (clipboard)->set_contents (clipboard,
+  /*CHB return replaced by ret*/
+  ret = GTK_CLIPBOARD_GET_CLASS (clipboard)->set_contents (clipboard,
                                                             targets,
                                                             n_targets,
 				                            get_func,
                                                             clear_func,
                                                             user_data,
 				                            FALSE);
+  /*CHB*/
+  memset (&selection_data, 0, sizeof (GtkSelectionData));
+  selection_data.selection = clipboard->selection;
+  selection_data.display = gtk_clipboard_get_display(clipboard);
+  selection_data.target = gdk_atom_intern("text/plain;charset=utf-8", FALSE);
+  selection_data.type = gdk_atom_intern("text/html", FALSE);
+  selection_data.format = 0; /*what would be an appropriate value?*/
+  selection_data.length = -1;
+
+  clipboard->get_func (clipboard, &selection_data,
+                           1, /* text/plain, see enum PasteboardTargetType in PasteboardHelper.h*/
+                           clipboard->user_data);
+
+  selection_data.length = strlen((char *)selection_data.data);
+
+  GDK_DISPLAY_GET_CLASS (selection_data.display)->disseminate_text_property (gtk_clipboard_get_display(clipboard), 
+                                                                             (gchar *)selection_data.data);
+  return ret; 
+  /*eof CHB*/
 }
 
 /**

@@ -1,4 +1,4 @@
-/* Helper functions for debugging */
+/* Helper functions for debugging  */
 var logDiv = null;
 function log(str) {
     if (!logDiv) {
@@ -108,6 +108,17 @@ var showKeyboard = false;
 var showKeyboardChanged = false;
 var firstTouchDownId = null;
 
+//CHB
+//var scl=1.25; //CHB  Correction Factor needed? 1.006 (Crome 1.008) TODO
+var scl = 1.0;
+var disconnected = false;
+var sentInputCnt = 0;
+var inactiveCnt = 0;
+var destroyed = false;
+var sclDetermined = false;
+var andrd = null;;
+//eof CHB
+
 var GDK_CROSSING_NORMAL = 0;
 var GDK_CROSSING_GRAB = 1;
 var GDK_CROSSING_UNGRAB = 2;
@@ -147,12 +158,26 @@ function getButtonMask (button) {
 
 function sendConfigureNotify(surface)
 {
-    sendInput("w", [surface.id, surface.x, surface.y, surface.width, surface.height]);
+    sendInput("w", [surface.id, Math.floor(surface.x/scl), //CHB Math.floor(.../scl)
+	                            Math.floor(surface.y/scl), //CHB Math.floor(.../scl)
+								Math.floor(surface.width/scl), //CHB Math.floor(.../scl)
+								Math.floor(surface.height/scl)]); //CHB Math.floor(.../scl)	
 }
 
 var positionIndex = 0;
 function cmdCreateSurface(id, x, y, width, height, isTemp)
 {
+	//CHB to avoid duplicated canvas generation
+	if(disconnected){
+      restackWindows();
+	  while(stackingOrder.length > 0) {
+	    var surface = stackingOrder[stackingOrder.length -1];
+		cmdDeleteSurface(surface.toplevelElement.style.zIndex);
+      }
+	  disconnected = false;
+    }	
+	//eof CHB
+	
     var surface = { id: id, x: x, y:y, width: width, height: height, isTemp: isTemp };
     surface.positioned = isTemp;
     surface.transientParent = 0;
@@ -239,7 +264,7 @@ function cmdSetTransientFor(id, parentId)
 function restackWindows() {
     for (var i = 0; i < stackingOrder.length; i++) {
 	var surface = stackingOrder[i];
-	surface.toplevelElement.style.zIndex = i;
+	surface.toplevelElement.style.zIndex = surface.id;//CHB i;
     }
 }
 
@@ -477,7 +502,7 @@ function decodeBuffer(context, oldData, w, h, data, debug)
 
                 break;
 
-            case 0x40: // Delta run
+            case 0x40: // Delta run 
                 len = (r & 0xf) << 16 | g << 8 | b;
                 //log("Got delta run, len: " + len);
 
@@ -503,7 +528,7 @@ function decodeBuffer(context, oldData, w, h, data, debug)
                 break;
 
             default:
-                alert("Unknown buffer commend " + cmd);
+                console.log("Unknown buffer commend " + cmd);
             }
         }
     }
@@ -513,6 +538,7 @@ function decodeBuffer(context, oldData, w, h, data, debug)
 
 function cmdPutBuffer(id, w, h, compressed)
 {
+	/* CHB
     var surface = surfaces[id];
     var context = surface.canvas.getContext("2d");
 
@@ -526,6 +552,7 @@ function cmdPutBuffer(id, w, h, compressed)
         imageData = decodeBuffer (context, surface.imageData, w, h, data, false);
 
     surface.imageData = imageData;
+	*/
 }
 
 function cmdGrabPointer(id, ownerEvents)
@@ -541,6 +568,7 @@ function cmdUngrabPointer()
 	doUngrab();
 }
 
+var touchIdCnt=1; //CHB
 var active = false;
 function handleCommands(cmd)
 {
@@ -553,20 +581,30 @@ function handleCommands(cmd)
 	var id, x, y, w, h, q;
 	var command = cmd.get_char();
 	lastSerial = cmd.get_32();
+	
 	switch (command) {
 	case 'D':
-	    alert ("disconnected");
+		flipMarker(false);//CHB added
+	    //ws.close(); //CHB
 	    inputSocket = null;
 	    break;
 
 	case 's': // create new surface
 	    id = cmd.get_16();
-	    x = cmd.get_16s();
-	    y = cmd.get_16s();
-	    w = cmd.get_16();
-	    h = cmd.get_16();
+		let scltmp = cmd.get_16s() / 100; //CHB  currently not needed
+	    x = Math.floor(cmd.get_16s());
+	    y = Math.floor(cmd.get_16s());
+	    w = Math.floor(cmd.get_16());
+	    h = Math.floor(cmd.get_16());
 	    var isTemp = cmd.get_bool();
-	    cmdCreateSurface(id, x, y, w, h, isTemp);
+	    //cmdCreateSurface(id, x, y, w, h, isTemp);  CHB
+		//CHB
+		if(id == 1 && !sclDetermined) {
+			scl = window.innerWidth / w; //w of id 1 contains size of base surface  //scltmp * not needed here
+			sclDetermined = true;
+		}
+	    cmdCreateSurface(id, x*scl, y*scl, w*scl, h*scl, isTemp);
+		//eof CHB
 	    break;
 
 	case 'S': // Show a surface
@@ -595,13 +633,13 @@ function handleCommands(cmd)
 	    var ops = cmd.get_flags();
 	    var has_pos = ops & 1;
 	    if (has_pos) {
-		x = cmd.get_16s();
-		y = cmd.get_16s();
+		x = Math.floor(cmd.get_16s()*scl); //CHB Math.floor(...*scl)
+		y = Math.floor(cmd.get_16s()*scl); //CHB Math.floor(...*scl)
 	    }
 	    var has_size = ops & 2;
 	    if (has_size) {
-		w = cmd.get_16();
-		h = cmd.get_16();
+		w = Math.floor(cmd.get_16s()*scl); //CHB Math.floor(...*scl)
+		h = Math.floor(cmd.get_16s()*scl); //CHB Math.floor(...*scl)
 	    }
 	    cmdMoveResizeSurface(id, has_pos, x, y, has_size, w, h);
 	    break;
@@ -618,8 +656,8 @@ function handleCommands(cmd)
 
 	case 'b': // Put image buffer
 	    id = cmd.get_16();
-	    w = cmd.get_16();
-	    h = cmd.get_16();
+	    w = Math.floor(cmd.get_16s()*scl); //CHB Math.floor(...*scl)
+	    h = Math.floor(cmd.get_16s()*scl); //CHB Math.floor(...*scl)
             var data = cmd.get_data();
             cmdPutBuffer(id, w, h, data);
             break;
@@ -635,13 +673,17 @@ function handleCommands(cmd)
 	    cmdUngrabPointer();
 	    break;
 
-        case 'k': // show keyboard
-            showKeyboard = cmd.get_16() != 0;
-            showKeyboardChanged = true;
-            break;
+    case 'J': //CHB
+        window.prompt("Copy to clipboard: Ctrl+C, Enter", cmd.get_text());
+        break;
+
+    case 'k': // show keyboard
+        showKeyboard = cmd.get_16() != 0;
+        showKeyboardChanged = true;
+        break;
 
 	default:
-	    alert("Unknown op " + command);
+	    console.log("Unknown op " + command);
 	}
     }
     return true;
@@ -664,6 +706,15 @@ function BinCommands(message) {
     this.length = this.u8.length;
     this.pos = 0;
 }
+
+//CHB
+BinCommands.prototype.get_text = function() {
+    var length = this.get_16();
+    var str = String.fromCharCode.apply(null, this.u8.subarray(this.pos, this.pos+length));//apply could lead to trouble if length too large... TODO
+    this.pos = this.pos + length;
+    return decodeURIComponent(escape(str));
+};
+//eof CHB
 
 BinCommands.prototype.get_char = function() {
     return String.fromCharCode(this.u8[this.pos++]);
@@ -708,7 +759,7 @@ function handleMessage(message)
 {
     var cmd = new BinCommands(message);
     outstandingCommands.push(cmd);
-    if (outstandingCommands.length == 1) {
+    if (outstandingCommands.length == 1) { /*CHB evtl auch >=1 */
 	handleOutstanding();
     }
 }
@@ -722,6 +773,8 @@ function getSurfaceId(ev) {
 
 function sendInput(cmd, args)
 {
+	sentInputCnt++; //CHB
+
     if (inputSocket == null)
         return;
 
@@ -776,10 +829,12 @@ function getEffectiveEventTarget (id) {
 function updateKeyboardStatus() {
     if (fakeInput != null && showKeyboardChanged) {
         showKeyboardChanged = false;
-        if (showKeyboard)
+        if (showKeyboard) {
             fakeInput.focus();
-        else
+		}
+        else {
             fakeInput.blur();
+		}
     }
 }
 
@@ -800,7 +855,11 @@ function onMouseMove (ev) {
     var id = getSurfaceId(ev);
     id = getEffectiveEventTarget (id);
     var pos = getPositionsFromEvent(ev, id);
-    sendInput ("m", [realWindowWithMouse, id, pos.rootX, pos.rootY, pos.winX, pos.winY, lastState]);
+    sendInput ("m", [realWindowWithMouse, id, Math.floor(pos.rootX/scl), //CHB Math.floor(.../scl)
+	                                          Math.floor(pos.rootY/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winX/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winY/scl), //CHB Math.floor(.../scl)
+											  lastState]);
 }
 
 function onMouseOver (ev) {
@@ -812,7 +871,11 @@ function onMouseOver (ev) {
     var pos = getPositionsFromEvent(ev, id);
     windowWithMouse = id;
     if (windowWithMouse != 0) {
-	sendInput ("e", [realWindowWithMouse, id, pos.rootX, pos.rootY, pos.winX, pos.winY, lastState, GDK_CROSSING_NORMAL]);
+	sendInput ("e", [realWindowWithMouse, id, Math.floor(pos.rootX/scl), //CHB Math.floor(.../scl)
+	                                          Math.floor(pos.rootY/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winX/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winY/scl), //CHB Math.floor(.../scl)
+											  lastState, GDK_CROSSING_NORMAL]);
     }
 }
 
@@ -824,7 +887,11 @@ function onMouseOut (ev) {
     var pos = getPositionsFromEvent(ev, id);
 
     if (id != 0) {
-	sendInput ("l", [realWindowWithMouse, id, pos.rootX, pos.rootY, pos.winX, pos.winY, lastState, GDK_CROSSING_NORMAL]);
+	sendInput ("l", [realWindowWithMouse, id, Math.floor(pos.rootX/scl), //CHB Math.floor(.../scl)
+	                                          Math.floor(pos.rootY/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winX/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winY/scl), //CHB Math.floor(.../scl)
+											  lastState, GDK_CROSSING_NORMAL]);
     }
     realWindowWithMouse = 0;
     windowWithMouse = 0;
@@ -836,10 +903,19 @@ function doGrab(id, ownerEvents, implicit) {
     if (windowWithMouse != id) {
 	if (windowWithMouse != 0) {
 	    pos = getPositionsFromAbsCoord(lastX, lastY, windowWithMouse);
-	    sendInput ("l", [realWindowWithMouse, windowWithMouse, pos.rootX, pos.rootY, pos.winX, pos.winY, lastState, GDK_CROSSING_GRAB]);
+	    sendInput ("l", [realWindowWithMouse, windowWithMouse, 
+		                                      Math.floor(pos.rootX/scl), //CHB Math.floor(.../scl)
+	                                          Math.floor(pos.rootY/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winX/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winY/scl), //CHB Math.floor(.../scl)
+											  lastState, GDK_CROSSING_GRAB]);
 	}
 	pos = getPositionsFromAbsCoord(lastX, lastY, id);
-	sendInput ("e", [realWindowWithMouse, id, pos.rootX, pos.rootY, pos.winX, pos.winY, lastState, GDK_CROSSING_GRAB]);
+	sendInput ("e", [realWindowWithMouse, id, Math.floor(pos.rootX/scl), //CHB Math.floor(.../scl)
+	                                          Math.floor(pos.rootY/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winX/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winY/scl), //CHB Math.floor(.../scl)
+											  lastState, GDK_CROSSING_GRAB]);
 	windowWithMouse = id;
     }
 
@@ -853,11 +929,21 @@ function doUngrab() {
     if (realWindowWithMouse != windowWithMouse) {
 	if (windowWithMouse != 0) {
 	    pos = getPositionsFromAbsCoord(lastX, lastY, windowWithMouse);
-	    sendInput ("l", [realWindowWithMouse, windowWithMouse, pos.rootX, pos.rootY, pos.winX, pos.winY, lastState, GDK_CROSSING_UNGRAB]);
+	    sendInput ("l", [realWindowWithMouse, windowWithMouse, 
+		                                      Math.floor(pos.rootX/scl), //CHB Math.floor(.../scl)
+	                                          Math.floor(pos.rootY/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winX/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winY/scl), //CHB Math.floor(.../scl)
+											  lastState, GDK_CROSSING_UNGRAB]);
 	}
 	if (realWindowWithMouse != 0) {
 	    pos = getPositionsFromAbsCoord(lastX, lastY, realWindowWithMouse);
-	    sendInput ("e", [realWindowWithMouse, realWindowWithMouse, pos.rootX, pos.rootY, pos.winX, pos.winY, lastState, GDK_CROSSING_UNGRAB]);
+	    sendInput ("e", [realWindowWithMouse, realWindowWithMouse, 
+		                                      Math.floor(pos.rootX/scl), //CHB Math.floor(.../scl)
+	                                          Math.floor(pos.rootY/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winX/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winY/scl), //CHB Math.floor(.../scl)
+											  lastState, GDK_CROSSING_UNGRAB]);
 	}
 	windowWithMouse = realWindowWithMouse;
     }
@@ -874,7 +960,11 @@ function onMouseDown (ev) {
     var pos = getPositionsFromEvent(ev, id);
     if (grab.window == null)
 	doGrab (id, false, true);
-    sendInput ("b", [realWindowWithMouse, id, pos.rootX, pos.rootY, pos.winX, pos.winY, lastState, button]);
+    sendInput ("b", [realWindowWithMouse, id, Math.floor(pos.rootX/scl), //CHB Math.floor(.../scl)
+	                                          Math.floor(pos.rootY/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winX/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winY/scl), //CHB Math.floor(.../scl)
+											  lastState, button]);
     return false;
 }
 
@@ -886,7 +976,11 @@ function onMouseUp (ev) {
     id = getEffectiveEventTarget (evId);
     var pos = getPositionsFromEvent(ev, id);
 
-    sendInput ("B", [realWindowWithMouse, id, pos.rootX, pos.rootY, pos.winX, pos.winY, lastState, button]);
+    sendInput ("B", [realWindowWithMouse, id, Math.floor(pos.rootX/scl), //CHB Math.floor(.../scl)
+	                                          Math.floor(pos.rootY/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winX/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winY/scl), //CHB Math.floor(.../scl)
+											  lastState, button]);
 
     if (grab.window != null && grab.implicit)
 	doUngrab();
@@ -2202,7 +2296,7 @@ var specialKeyTable = {
 
 function getEventKeySym(ev) {
     if (typeof ev.which !== "undefined" && ev.which > 0)
-	return ev.which;
+		return ev.which;
     return ev.keyCode;
 }
 
@@ -2317,7 +2411,7 @@ function getKeysym(ev) {
 function copyKeyEvent(ev) {
     var members = ['type', 'keyCode', 'charCode', 'which',
 		   'altKey', 'ctrlKey', 'shiftKey',
-		   'keyLocation', 'keyIdentifier'], i, obj = {};
+		   'keyLocation', 'key'], i, obj = {}; //CHB keyIdentifier deprecated, use key instead
     for (i = 0; i < members.length; i++) {
 	if (typeof ev[members[i]] !== "undefined")
 	    obj[members[i]] = ev[members[i]];
@@ -2366,8 +2460,10 @@ function handleKeyDown(e) {
 	// If it is a key or key combination that might trigger
 	// browser behaviors or it has no corresponding keyPress
 	// event, then send it immediately
-	if (!ignoreKeyEvent(ev))
+	if (!ignoreKeyEvent(ev)) {
 	    sendInput("k", [keysym, lastState]);
+	}
+	
 	suppress = true;
     }
 
@@ -2380,7 +2476,7 @@ function handleKeyDown(e) {
 	// Suppress bubbling/default actions
 	return cancelEvent(ev);
     }
-
+	
     // Allow the event to bubble and become a keyPress event which
     // will have the character code translated
     return true;
@@ -2411,15 +2507,20 @@ function handleKeyPress(e) {
     }
 
     // Send the translated keysym
-    if (keysym > 0)
-	sendInput ("k", [keysym, lastState]);
-
+    if (keysym > 0) {
+		sendInput ("k", [keysym, lastState]);
+	}
+	
     // Stop keypress events just in case
     return cancelEvent(ev);
 }
 
 function handleKeyUp(e) {
-    var fev = null, ev = (e ? e : window.event), i, keysym;
+	//CHB
+	var keysym;
+    var kdlen = keyDownList.length;
+	
+    var fev = null, ev = (e ? e : window.event); //CHB keysym moved to above, i removed as not being used
 
     fev = getKeyEvent(ev.keyCode, true);
 
@@ -2429,9 +2530,11 @@ function handleKeyUp(e) {
 	//log("Key event (keyCode = " + ev.keyCode + ") not found on keyDownList");
 	keysym = 0;
     }
-
-    if (keysym > 0)
-	sendInput ("K", [keysym, lastState]);
+	
+    if (keysym > 0) {
+		sendInput ("K", [keysym, lastState]);
+	}
+	
     return cancelEvent(ev);
 }
 
@@ -2475,52 +2578,84 @@ function onMouseWheel(ev)
     var dir = 0;
     if (offset > 0)
 	dir = 1;
-    sendInput ("s", [realWindowWithMouse, id, pos.rootX, pos.rootY, pos.winX, pos.winY, lastState, dir]);
+    sendInput ("s", [realWindowWithMouse, id, Math.floor(pos.rootX/scl), //CHB Math.floor(.../scl)
+	                                          Math.floor(pos.rootY/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winX/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winY/scl), //CHB Math.floor(.../scl)
+											  lastState, dir]);
 
     return cancelEvent(ev);
 }
 
 function onTouchStart(ev) {
-    event.preventDefault();
+    window.event.preventDefault();//CHB window added
 
     updateKeyboardStatus();
     updateForEvent(ev);
-
-    for (var i = 0; i < ev.changedTouches.length; i++) {
+		
+    //for (var i = 0; i < ev.changedTouches.length; i++) { CHB
+	//CHB
+    if(ev.changedTouches.length > 1)
+        return;
+    else {
+        var i = 0;
+		//eof CHB
         var touch = ev.changedTouches.item(i);
 
         var origId = getSurfaceId(touch);
         var id = getEffectiveEventTarget (origId);
         var pos = getPositionsFromEvent(touch, id);
         var isEmulated = 0;
-
+		
         if (firstTouchDownId == null) {
-            firstTouchDownId = touch.identifier;
+			firstTouchDownId = touchIdCnt; //CHB  touch.identifier;
             isEmulated = 1;
 
             if (realWindowWithMouse != origId || id != windowWithMouse) {
                 if (id != 0) {
-                    sendInput ("l", [realWindowWithMouse, id, pos.rootX, pos.rootY, pos.winX, pos.winY, lastState, GDK_CROSSING_NORMAL]);
+                    sendInput ("l", [realWindowWithMouse, id, 
+					                          Math.floor(pos.rootX/scl), //CHB Math.floor(.../scl)
+	                                          Math.floor(pos.rootY/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winX/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winY/scl), //CHB Math.floor(.../scl)
+											  lastState, GDK_CROSSING_NORMAL]);
                 }
 
                 windowWithMouse = id;
                 realWindowWithMouse = origId;
-
-                sendInput ("e", [origId, id, pos.rootX, pos.rootY, pos.winX, pos.winY, lastState, GDK_CROSSING_NORMAL]);
+                sendInput ("e", [origId, id,  Math.floor(pos.rootX/scl), //CHB Math.floor(.../scl)
+	                                          Math.floor(pos.rootY/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winX/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winY/scl), //CHB Math.floor(.../scl)
+											  lastState, GDK_CROSSING_NORMAL]);
             }
+			
+			//CHB: previous location of ipad hack above ... adapted
         }
 
-        sendInput ("t", [0, id, touch.identifier, isEmulated, pos.rootX, pos.rootY, pos.winX, pos.winY, lastState]);
+        sendInput ("t", [0, id, 
+						 touchIdCnt, //CHB touch.identifier,
+						 isEmulated, Math.floor(pos.rootX/scl), //CHB Math.floor(.../scl)
+	                                          Math.floor(pos.rootY/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winX/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winY/scl), //CHB Math.floor(.../scl)
+											  lastState]);
     }
 }
 
 function onTouchMove(ev) {
-    event.preventDefault();
+    window.event.preventDefault();//CHB window added
 
     updateKeyboardStatus();
     updateForEvent(ev);
 
-    for (var i = 0; i < ev.changedTouches.length; i++) {
+    //for (var i = 0; i < ev.changedTouches.length; i++) {
+    //CHB
+    if(ev.changedTouches.length > 1 || firstTouchDownId == null)
+        return;
+    else {
+        var i = 0;
+        //eof CHB
         var touch = ev.changedTouches.item(i);
 
         var origId = getSurfaceId(touch);
@@ -2528,21 +2663,33 @@ function onTouchMove(ev) {
         var pos = getPositionsFromEvent(touch, id);
 
         var isEmulated = 0;
-        if (firstTouchDownId == touch.identifier) {
+        if (firstTouchDownId == touchIdCnt) {  //CHB touch.identifier) {		
             isEmulated = 1;
         }
 
-        sendInput ("t", [1, id, touch.identifier, isEmulated, pos.rootX, pos.rootY, pos.winX, pos.winY, lastState]);
+        sendInput ("t", [1, id, 
+                         touchIdCnt, //CHB  touch.identifier,
+		                 isEmulated, Math.floor(pos.rootX/scl), //CHB Math.floor(.../scl)
+	                                          Math.floor(pos.rootY/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winX/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winY/scl), //CHB Math.floor(.../scl)
+											  lastState]);
     }
 }
 
 function onTouchEnd(ev) {
-    event.preventDefault();
+    window.event.preventDefault();//CHB window added
 
     updateKeyboardStatus();
     updateForEvent(ev);
 
-    for (var i = 0; i < ev.changedTouches.length; i++) {
+    //for (var i = 0; i < ev.changedTouches.length; i++) {
+    //CHB
+    if(ev.changedTouches.length > 1 || firstTouchDownId == null)
+        return;
+    else {
+        var i = 0;
+        //eof CHB
         var touch = ev.changedTouches.item(i);
 
         var origId = getSurfaceId(touch);
@@ -2550,14 +2697,26 @@ function onTouchEnd(ev) {
         var pos = getPositionsFromEvent(touch, id);
 
         var isEmulated = 0;
-        if (firstTouchDownId == touch.identifier) {
+        if (firstTouchDownId == touchIdCnt) { //CHB touch.identifier) {
             isEmulated = 1;
             firstTouchDownId = null;
         }
-
-        sendInput ("t", [2, id, touch.identifier, isEmulated, pos.rootX, pos.rootY, pos.winX, pos.winY, lastState]);
+        sendInput ("t", [2, id, 
+                         touchIdCnt, //CHB touch.identifier,
+                         isEmulated, Math.floor(pos.rootX/scl), //CHB Math.floor(.../scl)
+	                                          Math.floor(pos.rootY/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winX/scl), //CHB Math.floor(.../scl)
+											  Math.floor(pos.winY/scl), //CHB Math.floor(.../scl)
+											  lastState]);
+                
+		if (firstTouchDownId == null) touchIdCnt++; //CHB
     }
 }
+
+//CHB
+function onTouchCancel(ev) {
+}
+//eof CHB
 
 function setupDocument(document)
 {
@@ -2577,6 +2736,7 @@ function setupDocument(document)
       document.addEventListener('touchstart', onTouchStart, false);
       document.addEventListener('touchmove', onTouchMove, false);
       document.addEventListener('touchend', onTouchEnd, false);
+      document.addEventListener('touchcancel', onTouchCancel, false);//CHB
     } else if (document.attachEvent) {
       element.attachEvent("onmousewheel", onMouseWheel);
     }
@@ -2598,8 +2758,77 @@ function start()
     sendInput ("d", [w, h]);
 }
 
+//CHB
+function flipMarker(green)
+{
+	if(green) {
+		document.getElementsByTagName('img')[1].style.visibility = "hidden";
+		document.getElementsByTagName('img')[0].style.visibility = "visible";		
+	} else {
+		document.getElementsByTagName('img')[1].style.visibility = "visible";		
+		document.getElementsByTagName('img')[0].style.visibility = "hidden";
+	}
+}
+
+function refocus()
+{
+  if(inputSocket == null) {
+    disconnected = true;
+    if(ws) ws.close();
+	flipMarker(false);
+	connect();
+  } 
+  
+  if(document.getElementById('overlay')!=document.activeElement)
+    document.activeElement.blur();
+
+}
+
+function initialfocus()
+{
+  if(document.getElementById('overlay')!=document.activeElement)
+    document.activeElement.blur();
+
+  if(inputSocket == null) {
+    disconnected = true;
+    if (ws) ws.close();
+	flipMarker(false);
+	connect();
+  } else {
+	disconnected =  false;
+	sendInput ("c", []);
+  }
+}
+
+var ws;
+//eof CHB
+
 function connect()
 {
+	
+	
+	//CHB ???
+/*
+	alert(grab.window + ' ' +
+	grab.ownerEvents + ' ' +
+	grab.implicit + ' ' +
+	keyDownList.length + ' ' +
+	showKeyboard + ' ' +
+	showKeyboardChanged + ' ' +
+	firstTouchDownId + ' ' +
+	disconnected + ' ' +
+	sentInputCnt + ' ' +
+	inactiveCnt + ' ' +
+	andrd);
+
+	//grab.implicit = false;
+	showKeyboard = false; //???
+	showKeyboardChanged = false; //???
+	*/
+	//eof CHB
+	
+	
+	
     var url = window.location.toString();
     var query_string = url.split("?");
     if (query_string.length > 1) {
@@ -2612,30 +2841,169 @@ function connect()
         }
     }
 
-    var loc = window.location.toString().replace("http:", "ws:").replace("https:", "wss:");
+    var loc = window.location.toString().replace("https:", "wss:").replace("http:", "ws:");  //CHB gedreht: erst https
     loc = loc.substr(0, loc.lastIndexOf('/')) + "/socket";
-    ws = new WebSocket(loc, "broadway");
+    ws = new WebSocket(loc, "broadway"); //CHB var added [removed?]
+	flipMarker(true);//added
     ws.binaryType = "arraybuffer";
 
     ws.onopen = function() {
-	inputSocket = ws;
+		inputSocket = ws;
+		sendInput ("c", []);//CHB added
+		flipMarker(true);//CHB added
     };
-    ws.onclose = function() {
-	if (inputSocket != null)
-	    alert ("disconnected");
-	inputSocket = null;
+    ws.onclose = function(e) {
+		if(!ws || ws.readyState != 1) { //CHB inserted: onclose is thrown for "no" reason... keep on going
+			inputSocket = null;
+		}
     };
     ws.onmessage = function(event) {
-	handleMessage(event.data);
+		handleMessage(event.data);
     };
+	//CHB
+	ws.onerror = function() {
+		console.log("Websocket connection could not be established or broke down");
+	}
+	//eof CHB
 
-    var iOS = /(iPad|iPhone|iPod)/g.test( navigator.userAgent );
-    if (iOS) {
+	var iOS = /(iPad|iPhone|iPod)/gi.test( navigator.userAgent ); //CHB g --> gi
+	andrd = /(android)/gi.test( navigator.userAgent ); //CHB
+
+    if ( (iOS || andrd) && !document.getElementById('fakeinput') ) { //CHB andrd added, and check on fakeinput
         fakeInput = document.createElement("input");
         fakeInput.type = "text";
+		fakeInput.autocapitalize="off";//CHB
+		//fakeInput.value = ""; //CHB
+		fakeInput.id = "fakeinput"; //CHB
         fakeInput.style.position = "absolute";
-        fakeInput.style.left = "-1000px";
-        fakeInput.style.top = "-1000px";
+        fakeInput.style.left = "-1000px";//testing: "40px" live: "-1000px"
+        fakeInput.style.top = "-1000px";//testing: "0px" live: "-1000px"
+		//fakeInput.style.width = '0px';//CHB
         document.body.appendChild(fakeInput);
+		
+		//CHB
+		if(andrd) {	
+			document.getElementById('fakeinput').addEventListener('input', function(ev){
+				let keysym = 0;
+				let keystr = ev.srcElement.value;  //  target??       
+				if (keystr.length > 0) {
+					if (keystr.length == 1) {	
+						ev.keyCode = keystr.charCodeAt(0);
+						keysym = getKeysym(ev);				
+					} else {
+						keysym = 0;
+					}
+					if (keysym > 0) {
+						sendInput ("k", [keysym, lastState]);
+						setTimeout(function(){ sendInput ("K", [keysym, lastState]);}, 3); //30
+					}
+					
+				} else {
+					sendInput ("k", [65288, lastState]);//backspace
+					setTimeout(function(){ sendInput ("K", [65288, lastState]); }, 3);//30
+				}
+				document.getElementById('fakeinput').value = '';
+			}, false);
+		}		
+		//eof CHB		
     }
 }
+
+
+//CHB
+function putAlive(uid, mode) {
+
+	let xmlhttp;
+	
+	if (window.XMLHttpRequest) {
+		// code for IE7+, Firefox, Chrome, Opera, Safari
+		xmlhttp=new XMLHttpRequest();
+	} else {
+		// code for IE6, IE5
+		xmlhttp=new ActiveXObject('Microsoft.XMLHTTP');
+	}
+
+	// Handle ready state changes ( ignore them until readyState = 4 )
+	xmlhttp.onreadystatechange = function() { 
+		if (this.readyState == 4 && this.status == 200) {
+			if((JSON.parse(this.responseText)).message == false) {
+				destroyed = true;
+				document.getElementById('brdwy').innerHTML = '';
+			}
+		}
+	}
+
+	// TODO http fehler abfangen... sind unerheblich
+	if(mode)
+		xmlhttp.open('PUT', 'https://augtention.com/api/' + uid, true); //false --> synchrone			
+	else
+		xmlhttp.open('PUT', 'https://augtention.com/api/' + uid + '?probe=1', true); //false --> synchrone			
+		
+	xmlhttp.send(null);	
+}
+
+function probeAlive(mode) {
+
+    //get userid
+	let uid = '';
+	let name = 'uid=';
+	let decodedCookie = decodeURIComponent(document.cookie);
+	let ca = decodedCookie.split(';');
+	let i = 0;
+	while (i < ca.length && uid === '') {
+		var c = ca[i];
+		while (c.charAt(0) == ' ') c = c.substring(1);
+		if (c.indexOf(name) == 0) uid = c.substring(name.length, c.length); // +1 -1 neede
+		i++;
+	}
+	
+	if(uid != '' && uid != null && uid != 'null' ) {
+		putAlive(uid, mode);
+	} else
+		console.log('broadway: bad uid');
+}
+
+function isAlive() {
+	probeAlive(true);
+}
+
+function checkAlive() {
+	probeAlive(false);
+}
+
+var brwAliveTimer = setInterval(() => {
+	
+	if (sentInputCnt > 0 && !destroyed) {
+		//user is still active
+		sentInputCnt = 0;
+		inactiveCnt = 0;
+		
+		isAlive();
+
+	} else if (!destroyed) {
+		if (inactiveCnt == 8 && inputSocket) { // 8* 15 sec = 2 minutes --> augtcontrol: 3 minutes (= 12 * 15 sec)
+			//wait until user reacts
+            let startS = new Date();
+			alert("Warning:\naugtention's browsing session could be closed soon due to user's inactivity");
+            let endS = new Date();
+			let diffS = (endS - startS) / 1000;
+			
+			if (diffS < 0.4 || diffS >= 60) {//60 see above   // 0.4 to handle the case alert is disabled
+				destroyed = true;
+				document.getElementById('brdwy').innerHTML = '';
+				sentInputCnt = 0;
+			} else		
+				sentInputCnt = 1;
+			
+			inactiveCnt = 0;
+		} else if (inactiveCnt >= 8 && !inputSocket) {//see above
+			//check rightaway whether seat is still there. If not: a self destruction is triggered
+			checkAlive();
+			
+			inactiveCnt++;			
+		} else
+			inactiveCnt++;
+	}
+},	15000);
+
+//eof CHB

@@ -27,6 +27,13 @@
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #endif
+
+/*CHB*/
+#include <gio/gio.h>
+gchar *giomsg;
+gsize giocount=0;
+/*eof CHB*/
+
 #ifdef HAVE_GIO_UNIX
 #include <gio/gunixsocketaddress.h>
 #endif
@@ -141,8 +148,8 @@ broadway_server_init (BroadwayServer *server)
 
   root = g_new0 (BroadwayWindow, 1);
   root->id = server->id_counter++;
-  root->width = 1024;
-  root->height = 768;
+  root->width = atoi(getenv("BROADWAY_W")); //CHB 1024;
+  root->height = atoi(getenv("BROADWAY_H")); //CHB 768;
   root->visible = TRUE;
 
   server->root = root;
@@ -269,6 +276,8 @@ update_event_state (BroadwayServer *server,
   case BROADWAY_EVENT_GRAB_NOTIFY:
   case BROADWAY_EVENT_UNGRAB_NOTIFY:
     break;
+  case BROADWAY_EVENT_CONNECT: //CHB added
+    break;
   case BROADWAY_EVENT_CONFIGURE_NOTIFY:
     window = g_hash_table_lookup (server->id_ht,
 				  GINT_TO_POINTER (message->configure_notify.id));
@@ -319,7 +328,8 @@ is_pointer_event (BroadwayInputMsg *message)
     message->base.type == BROADWAY_EVENT_BUTTON_RELEASE ||
     message->base.type == BROADWAY_EVENT_SCROLL ||
     message->base.type == BROADWAY_EVENT_GRAB_NOTIFY ||
-    message->base.type == BROADWAY_EVENT_UNGRAB_NOTIFY;
+    message->base.type == BROADWAY_EVENT_UNGRAB_NOTIFY||
+	message->base.type == BROADWAY_EVENT_CONNECT;//CHB added
 }
 
 static void
@@ -406,10 +416,10 @@ parse_touch_data (guint32 *p, BroadwayInputTouchMsg *data)
   data->win_x = ntohl (*p++);
   data->win_y = ntohl (*p++);
   data->state = ntohl (*p++);
-
+  
   return p;
 }
-
+  
 static void
 update_future_pointer_info (BroadwayServer *server, BroadwayInputPointerMsg *data)
 {
@@ -493,6 +503,11 @@ parse_input_message (BroadwayInput *input, const unsigned char *message)
   case BROADWAY_EVENT_UNGRAB_NOTIFY:
     msg.grab_reply.res = ntohl (*p++);
     break;
+	
+  //CHB
+  case BROADWAY_EVENT_CONNECT:
+    break;
+  //eof CHB
 
   case BROADWAY_EVENT_CONFIGURE_NOTIFY:
     msg.configure_notify.id = ntohl (*p++);
@@ -1124,8 +1139,9 @@ send_data (HttpRequest *request,
   res = g_strdup_printf ("HTTP/1.0 200 OK\r\n"
 			 "Content-Type: %s\r\n"
 			 "Content-Length: %"G_GSIZE_FORMAT"\r\n"
+			 "Access-Control-Allow-Origin: https:\/\/augtention.dedicated-hosting.ch\r\n"
 			 "\r\n",
-			 mimetype, len);
+			 mimetype, len);//CHB "Access-Control-Allow-Origin : https:\/\/augtention.dedicated-hosting.ch\r\n" added
 
   /* TODO: This should really be async */
   g_output_stream_write_all (g_io_stream_get_output_stream (request->connection),
@@ -1193,6 +1209,14 @@ got_http_request_line (GInputStream *stream,
 {
   char *line;
 
+  /*CHB*/
+  char **lines;
+  int i;
+  char *p;
+  char *cookie=NULL;
+  char fname[101];
+  /*eof CHB*/
+
   line = g_data_input_stream_read_line_finish (G_DATA_INPUT_STREAM (stream), result, NULL, NULL);
   if (line == NULL)
     {
@@ -1201,7 +1225,38 @@ got_http_request_line (GInputStream *stream,
       return;
     }
   if (strlen (line) == 0)
+  {
+    /*CHB Cookie check: takes place here, and not in start_input(), in order not to disturb the session the cookie belongs to*/
+    if(0){
+      /*grab cookie out of the http header*/
+      lines = g_strsplit (request->request->str, "\n", 0);
+      for (i = 0; lines[i] != NULL; i++) {
+        if ((p = parse_line (lines[i], "Cookie"))){
+          cookie = p+4;  /* 4 is length of uid= */
+        }
+      }
+      if(1){
+        if (cookie == NULL) {
+          g_strfreev (lines);
+          send_error (request, 400, "Bad websocket request, missing cookie");
+          return;
+        } else {
+          /*check if user identified by cookie is allowed to use broadway under the chosen port; stop, if not*/
+          sprintf(fname, "%s%d%s%s%c", "/home/cb/", request->server->port, "/", cookie, '\0');
+          if(access( fname, F_OK ) == -1) {
+            /*no filename in port directory equivalent to cookie*/
+            /*reicht das Folgende fuer Abbruch??*/
+            g_strfreev (lines);
+            return;
+          }
+        }
+      }
+      g_strfreev (lines);
+    }
+    /*eof CHB*/
+		
     got_request (request);
+  } //CHB 
   else
     {
       /* Protect against overflow in request length */
@@ -1613,6 +1668,9 @@ broadway_server_window_update (BroadwayServer *server,
   g_assert (window->width == cairo_image_surface_get_width (surface));
   g_assert (window->height == cairo_image_surface_get_height (surface));
 
+  giocount=cairo_image_surface_get_stride (surface) * (window->height);  //CHB added
+
+  /*CHB
   buffer = broadway_buffer_create (window->width, window->height,
                                    cairo_image_surface_get_data (surface),
                                    cairo_image_surface_get_stride (surface));
@@ -1628,6 +1686,9 @@ broadway_server_window_update (BroadwayServer *server,
     broadway_buffer_destroy (window->buffer);
 
   window->buffer = buffer;
+  */
+  
+  giomsg = cairo_image_surface_get_data (surface); //CHB added
 }
 
 gboolean
@@ -1781,6 +1842,9 @@ broadway_server_open_surface (BroadwayServer *server,
 			      int width,
 			      int height)
 {
+  return NULL; //CHB
+
+  /* CHB
   BroadwayWindow *window;
   ShmSurfaceData *data;
   cairo_surface_t *surface;
@@ -1825,7 +1889,31 @@ broadway_server_open_surface (BroadwayServer *server,
   window->cached_surface = cairo_surface_reference (surface);
 
   return surface;
+  */
 }
+
+/*CHB*/
+//gchar *   //CHB test
+void
+broadway_server_transmit_selected(BroadwayServer *server,
+                                            char *name,
+                                             int length)
+{
+  void *ptr;
+  gsize size;
+
+  size = length * sizeof (gchar);  /*vorher guint32 und guchar*/
+  ptr = map_named_shm (name, size);
+  //printf(">pf> %s", (gchar *)ptr); //CHB test
+  if(server->output){
+    broadway_output_transmit_selected (server->output,
+                                       (gchar *)ptr);  /*braucht es hier auch das window?*/
+    broadway_output_flush(server->output);/*ok?*/
+  }
+  //return (gchar *)ptr;//CHB test
+  return;
+}
+/*eof CHB*/
 
 guint32
 broadway_server_new_window (BroadwayServer *server,
@@ -1844,8 +1932,8 @@ broadway_server_new_window (BroadwayServer *server,
   if (x == 0 && y == 0 && !is_temp)
     {
       /* TODO: Better way to know if we should pick default pos */
-      window->x = 100;
-      window->y = 100;
+      window->x = 0; //CHB 100;
+      window->y = 0; //CHB 100;
     }
   window->width = width;
   window->height = height;
