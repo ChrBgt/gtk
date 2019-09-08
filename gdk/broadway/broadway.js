@@ -116,7 +116,8 @@ var sentInputCnt = 0;
 var inactiveCnt = 0;
 var destroyed = false;
 var sclDetermined = false;
-var andrd = null;;
+var andrd = null;
+var minibrowser = true; //false; //true when testing
 //eof CHB
 
 var GDK_CROSSING_NORMAL = 0;
@@ -600,7 +601,8 @@ function handleCommands(cmd)
 	    //cmdCreateSurface(id, x, y, w, h, isTemp);  CHB
 		//CHB
 		if(id == 1 && !sclDetermined) {
-			scl = window.innerWidth / w; //w of id 1 contains size of base surface  //scltmp * not needed here
+			if(!minibrowser) scl = window.innerWidth / w; //w of id 1 contains size of base surface  //scltmp * not needed here
+			else console.log('create new surface ', scl, x, y, w, h);
 			sclDetermined = true;
 		}
 	    cmdCreateSurface(id, x*scl, y*scl, w*scl, h*scl, isTemp);
@@ -674,8 +676,8 @@ function handleCommands(cmd)
 	    break;
 
     case 'J': //CHB
-        window.prompt("Copy to clipboard: Ctrl+C, Enter", cmd.get_text());
-        break;
+		window.prompt("Copy to clipboard: Ctrl+C, Enter", cmd.get_text());
+		break;
 
     case 'k': // show keyboard
         showKeyboard = cmd.get_16() != 0;
@@ -984,7 +986,7 @@ function onMouseUp (ev) {
 
     if (grab.window != null && grab.implicit)
 	doUngrab();
-
+	
     return false;
 }
 
@@ -2416,6 +2418,7 @@ function copyKeyEvent(ev) {
 	if (typeof ev[members[i]] !== "undefined")
 	    obj[members[i]] = ev[members[i]];
     }
+	
     return obj;
 }
 
@@ -2518,6 +2521,7 @@ function handleKeyPress(e) {
 function handleKeyUp(e) {
 	//CHB
 	var keysym;
+	//eof CHB (?)
     var kdlen = keyDownList.length;
 	
     var fev = null, ev = (e ? e : window.event); //CHB keysym moved to above, i removed as not being used
@@ -2913,6 +2917,8 @@ function connect()
 //CHB
 function putAlive(uid, mode) {
 
+	if(!minibrowser) {
+	
 	let xmlhttp;
 	
 	if (window.XMLHttpRequest) {
@@ -2928,6 +2934,7 @@ function putAlive(uid, mode) {
 		if (this.readyState == 4 && this.status == 200) {
 			if((JSON.parse(this.responseText)).message == false) {
 				destroyed = true;
+				console.log('... bye bye. Reload application in browser to start a new session.');
 				document.getElementById('brdwy').innerHTML = '';
 			}
 		}
@@ -2940,6 +2947,7 @@ function putAlive(uid, mode) {
 		xmlhttp.open('PUT', 'https://augtention.com/api/' + uid + '?probe=1', true); //false --> synchrone			
 		
 	xmlhttp.send(null);	
+	}
 }
 
 function probeAlive(mode) {
