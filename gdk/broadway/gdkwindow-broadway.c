@@ -898,6 +898,13 @@ gdk_broadway_window_get_frame_extents (GdkWindow    *window,
   rect->y = window->y;
   rect->width = window->width;
   rect->height = window->height;
+  
+  /*//CHB
+  rect->x = 0;
+  rect->y = 0;
+  rect->width = atoi(getenv("BROADWAY_W"));
+  rect->height = atoi(getenv("BROADWAY_H"));  
+  //eof CHB*/
 }
 
 static gboolean
@@ -1321,7 +1328,7 @@ update_pos (MoveResizeData *mv_resize,
 				     w, h, &w, &h);
 	}
 
-      gdk_window_move_resize (mv_resize->moveresize_window, x, y, w, h);
+      //gdk_window_move_resize (mv_resize->moveresize_window, x, y, w, h);  CHB disable resizing!
     }
   else
     {

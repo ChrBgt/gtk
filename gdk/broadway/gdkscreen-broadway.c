@@ -31,12 +31,12 @@
 
 #include <stdlib.h>
 #include <string.h>
-
+/*
 //CHB
 static int brwidth = 200;
 static int brheight = 100;
 //eof CHB
-
+*/
 static void   gdk_broadway_screen_dispose     (GObject *object);
 static void   gdk_broadway_screen_finalize    (GObject *object);
 
@@ -45,8 +45,8 @@ G_DEFINE_TYPE (GdkBroadwayScreen, gdk_broadway_screen, GDK_TYPE_SCREEN)
 static void
 gdk_broadway_screen_init (GdkBroadwayScreen *screen)
 {
-  screen->width = 1024;
-  screen->height = 768;
+  screen->width = atoi(getenv("BROADWAY_W")+1); //CHB 1024;
+  screen->height = atoi(getenv("BROADWAY_H")+1); //CHB 768;
 }
 
 static GdkDisplay *
@@ -58,13 +58,17 @@ gdk_broadway_screen_get_display (GdkScreen *screen)
 static gint
 gdk_broadway_screen_get_width (GdkScreen *screen)
 {
-  return GDK_BROADWAY_SCREEN (screen)->width;
+  gint ret; //CHB test
+  ret = GDK_BROADWAY_SCREEN (screen)->width;
+  return ret;
 }
 
 static gint
 gdk_broadway_screen_get_height (GdkScreen *screen)
 {
-  return GDK_BROADWAY_SCREEN (screen)->height;
+  gint ret; //CHB test
+  ret = GDK_BROADWAY_SCREEN (screen)->height;
+  return ret;  
 }
 
 static gint
@@ -241,12 +245,12 @@ gdk_broadway_screen_class_init (GdkBroadwayScreenClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
   GdkScreenClass *screen_class = GDK_SCREEN_CLASS (klass);
-
+/*
   //CHB
   brwidth = atoi(getenv("BROADWAY_W"));
   brheight = atoi(getenv("BROADWAY_H"));
   //eof CHB
-  
+ */ 
   object_class->dispose = gdk_broadway_screen_dispose;
   object_class->finalize = gdk_broadway_screen_finalize;
 

@@ -1955,7 +1955,7 @@ broadway_server_new_window (BroadwayServer *server,
 				 window->is_temp);
   else
     fake_configure_notify (server, window);
-
+//g_printerr('broadway_server_new_window %d %d\n', window->width, window->height);//CHB test
   return window->id;
 }
 
@@ -1983,6 +1983,7 @@ broadway_server_resync_windows (BroadwayServer *server)
 				   window->width,
 				   window->height,
 				   window->is_temp);
+//g_printerr('broadway_server_resync_windows %d %d\n', window->width, window->height);//CHB test
     }
 
   /* Then do everything that may reference other windows */

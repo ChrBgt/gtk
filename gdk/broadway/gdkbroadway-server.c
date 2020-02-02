@@ -32,6 +32,9 @@
 
 /*CHB*/
 #include <gio/gio.h>
+int globw[10000];//CHB test
+int globh[10000];//CHB test
+int globi=0;//CHB test
 /*eof CHB*/
 
 typedef struct BroadwayInput BroadwayInput;
@@ -389,7 +392,7 @@ gdk_broadway_server_wait_for_reply (GdkBroadwayServer *server,
 	  break;
 	}
 
-      read_some_input_blocking (server);
+      read_some_input_nonblocking (server);//CHB non added
       parse_all_input (server);
     }
 
@@ -479,7 +482,8 @@ _gdk_broadway_server_new_window (GdkBroadwayServer *server,
   id = reply->new_window.id;
   
   g_free (reply);
-
+globw[globi] = msg.width;//CHB test
+globh[globi] = msg.height;globi++;//CHB test
   return id;
 }
 
@@ -837,22 +841,25 @@ _gdk_broadway_server_window_update (GdkBroadwayServer *server,
   if (surface == NULL)
     return;
 
-  //CHB
-  write(bwsfd, cairo_image_surface_get_data(surface),
-        cairo_image_surface_get_width(surface) * cairo_image_surface_get_height(surface) * sizeof(guint32));  //4 bytes per pixel
-  //eof CHB
-
   /*CHB
   data = cairo_surface_get_user_data (surface, &gdk_broadway_shm_cairo_key);
   g_assert (data != NULL);
   */
   
   msg.id = id;
-  //memcpy (msg.name, data->name, 36); CHB
   memcpy (msg.name, "dummy", 36);    //CHB: dummy, no data will be found
   msg.width = cairo_image_surface_get_width (surface);
   msg.height = cairo_image_surface_get_height (surface);
-
+  
+  //CHB
+  {
+  unsigned char *data;
+  cairo_surface_flush (surface);
+  data = cairo_image_surface_get_data(surface);
+  write(bwsfd, data, msg.width * msg.height * sizeof(guint32));  //4 bytes per pixel
+  }
+  //eof CHB
+  
   gdk_broadway_server_send_message (server, msg,
 				    BROADWAY_REQUEST_UPDATE);
 }

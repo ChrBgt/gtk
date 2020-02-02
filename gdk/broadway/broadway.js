@@ -117,7 +117,8 @@ var inactiveCnt = 0;
 var destroyed = false;
 var sclDetermined = false;
 var andrd = null;
-var minibrowser = true; //false; //true when testing
+var minibrowser = false; //false; //true when testing
+var checkerInterval = null;
 //eof CHB
 
 var GDK_CROSSING_NORMAL = 0;
@@ -2749,6 +2750,7 @@ function setupDocument(document)
 function start()
 {
     setupDocument(document);
+    checkerStart(); //CHB
 
     var w, h;
     w = window.innerWidth;
@@ -2979,8 +2981,7 @@ function checkAlive() {
 	probeAlive(false);
 }
 
-var brwAliveTimer = setInterval(() => {
-	
+function checker() {
 	if (sentInputCnt > 0 && !destroyed) {
 		//user is still active
 		sentInputCnt = 0;
@@ -3012,6 +3013,15 @@ var brwAliveTimer = setInterval(() => {
 		} else
 			inactiveCnt++;
 	}
-},	15000);
+}
 
+function checkerStart() { 
+	console.log("augtention client started");
+
+	if (checkerInterval) {
+		window.clearInterval(checkerInterval);
+		checkerInterval = null;
+	}
+	checkerInterval = window.setInterval( checker, 15000);
+}
 //eof CHB
