@@ -837,7 +837,7 @@ function updateKeyboardStatus() {
 		}
         else {
             fakeInput.blur();
-		}
+        }
     }
 }
 
@@ -902,7 +902,7 @@ function onMouseOut (ev) {
 
 function doGrab(id, ownerEvents, implicit) {
     var pos;
-
+	
     if (windowWithMouse != id) {
 	if (windowWithMouse != 0) {
 	    pos = getPositionsFromAbsCoord(lastX, lastY, windowWithMouse);
@@ -929,6 +929,7 @@ function doGrab(id, ownerEvents, implicit) {
 
 function doUngrab() {
     var pos;
+
     if (realWindowWithMouse != windowWithMouse) {
 	if (windowWithMouse != 0) {
 	    pos = getPositionsFromAbsCoord(lastX, lastY, windowWithMouse);
@@ -956,6 +957,7 @@ function doUngrab() {
 function onMouseDown (ev) {
     updateForEvent(ev);
     var button = ev.button + 1;
+
     lastState = lastState | getButtonMask (button);
     var id = getSurfaceId(ev);
     id = getEffectiveEventTarget (id);
@@ -963,6 +965,7 @@ function onMouseDown (ev) {
     var pos = getPositionsFromEvent(ev, id);
     if (grab.window == null)
 	doGrab (id, false, true);
+
     sendInput ("b", [realWindowWithMouse, id, Math.floor(pos.rootX/scl), //CHB Math.floor(.../scl)
 	                                          Math.floor(pos.rootY/scl), //CHB Math.floor(.../scl)
 											  Math.floor(pos.winX/scl), //CHB Math.floor(.../scl)
@@ -2599,10 +2602,10 @@ function onTouchStart(ev) {
     updateForEvent(ev);
 		
     //for (var i = 0; i < ev.changedTouches.length; i++) { CHB
-	//CHB
-    if(ev.changedTouches.length > 1)
+	//CHB	
+    if(ev.changedTouches.length > 1) {
         return;
-    else {
+    } else {
         var i = 0;
 		//eof CHB
         var touch = ev.changedTouches.item(i);
@@ -2690,9 +2693,9 @@ function onTouchEnd(ev) {
 
     //for (var i = 0; i < ev.changedTouches.length; i++) {
     //CHB
-    if(ev.changedTouches.length > 1 || firstTouchDownId == null)
+    if(ev.changedTouches.length > 1 || firstTouchDownId == null) {
         return;
-    else {
+    } else {
         var i = 0;
         //eof CHB
         var touch = ev.changedTouches.item(i);
@@ -2706,6 +2709,7 @@ function onTouchEnd(ev) {
             isEmulated = 1;
             firstTouchDownId = null;
         }
+
         sendInput ("t", [2, id, 
                          touchIdCnt, //CHB touch.identifier,
                          isEmulated, Math.floor(pos.rootX/scl), //CHB Math.floor(.../scl)
@@ -2918,7 +2922,7 @@ function connect()
 
 //CHB
 function putAlive(uid, mode) {
-
+	
 	if(!minibrowser) {
 	
 	let xmlhttp;

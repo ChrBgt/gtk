@@ -8630,7 +8630,7 @@ gtk_window_move_focus (GtkWidget        *widget,
 
 static void
 gtk_window_real_set_focus (GtkWindow *window,
-			   GtkWidget *focus)
+                           GtkWidget *focus)
 {
   GtkWindowPrivate *priv = window->priv;
   GtkWidget *old_focus = priv->focus_widget;
@@ -8660,16 +8660,16 @@ gtk_window_real_set_focus (GtkWindow *window,
 	  (priv->focus_widget != priv->default_widget))
         {
           _gtk_widget_set_has_default (priv->focus_widget, FALSE);
-	  gtk_widget_queue_draw (priv->focus_widget);
+	      gtk_widget_queue_draw (priv->focus_widget);
 
-	  if (priv->default_widget)
+          if (priv->default_widget)
             _gtk_widget_set_has_default (priv->default_widget, TRUE);
-	}
+        }
 
       priv->focus_widget = NULL;
 
       if (priv->has_focus)
-	do_focus_change (old_focus, FALSE);
+        do_focus_change (old_focus, FALSE);
 
       g_object_notify (G_OBJECT (old_focus), "is-focus");
     }
@@ -8683,16 +8683,16 @@ gtk_window_real_set_focus (GtkWindow *window,
 
       if (gtk_widget_get_receives_default (priv->focus_widget) &&
 	  (priv->focus_widget != priv->default_widget))
-	{
-	  if (gtk_widget_get_can_default (priv->focus_widget))
+        {
+          if (gtk_widget_get_can_default (priv->focus_widget))
             _gtk_widget_set_has_default (priv->focus_widget, TRUE);
 
-	  if (priv->default_widget)
+          if (priv->default_widget)
             _gtk_widget_set_has_default (priv->default_widget, FALSE);
-	}
+        }
 
       if (priv->has_focus)
-	do_focus_change (priv->focus_widget, TRUE);
+        do_focus_change (priv->focus_widget, TRUE);
 
       /* It's possible for do_focus_change() above to have callbacks
        * that clear priv->focus_widget here.
@@ -8714,7 +8714,7 @@ gtk_window_real_set_focus (GtkWindow *window,
   if (old_focus)
     {
       if (old_focus_had_default != gtk_widget_has_default (old_focus))
-	gtk_widget_queue_draw (old_focus);
+        gtk_widget_queue_draw (old_focus);
 	
       g_object_thaw_notify (G_OBJECT (old_focus));
       g_object_unref (old_focus);
@@ -8722,7 +8722,7 @@ gtk_window_real_set_focus (GtkWindow *window,
   if (focus)
     {
       if (focus_had_default != gtk_widget_has_default (focus))
-	gtk_widget_queue_draw (focus);
+        gtk_widget_queue_draw (focus);
 
       g_object_thaw_notify (G_OBJECT (focus));
       g_object_unref (focus);
@@ -12035,14 +12035,14 @@ window_update_has_focus (GtkWindow *window)
 
       if (has_focus)
 	{
-	  if (priv->focus_widget &&
+	  if (1 && priv->focus_widget && //CHB 0&& added
 	      priv->focus_widget != widget &&
 	      !gtk_widget_has_focus (priv->focus_widget))
 	    do_focus_change (priv->focus_widget, TRUE);
 	}
       else
 	{
-	  if (priv->focus_widget &&
+	  if (1 && priv->focus_widget && //CHB 0&& added
 	      priv->focus_widget != widget &&
 	      gtk_widget_has_focus (priv->focus_widget))
 	    do_focus_change (priv->focus_widget, FALSE);

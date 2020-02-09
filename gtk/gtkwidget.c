@@ -15484,7 +15484,7 @@ gtk_widget_get_has_tooltip (GtkWidget *widget)
 {
   g_return_val_if_fail (GTK_IS_WIDGET (widget), FALSE);
 
-  return widget->priv->has_tooltip;
+  return FALSE; //CHB widget->priv->has_tooltip;
 }
 
 /**

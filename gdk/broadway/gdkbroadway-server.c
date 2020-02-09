@@ -815,9 +815,7 @@ _gdk_broadway_server_transmit_uri_and_title(GdkBroadwayServer *server,
   data->data_size =  (gsize)(lentext * sizeof (gchar));
   data->data = create_random_shm (data->name, data->data_size, &data->is_shm);  //&data->is_shm added! 10.1.16
 
-//g_printerr(">>>> %s\n", text);
   memcpy((void *)(data->data), (void *)(text), (size_t)(data->data_size));  /*guchar?*/
-//g_printerr(">>>>>> %s\n", (gchar *)data->data);
 
   memcpy (msg.name, data->name, 36);
   msg.length = lentext;

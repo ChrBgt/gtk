@@ -5408,6 +5408,9 @@ gtk_text_view_update_handles (GtkTextView       *text_view,
   if (mode == GTK_TEXT_HANDLE_MODE_SELECTION)
     gtk_text_view_set_handle_position (text_view, &min,
                                        GTK_TEXT_HANDLE_POSITION_SELECTION_START);
+									   
+  if (mode != GTK_TEXT_HANDLE_MODE_NONE && priv->im_context) //CHB for keyboard on mobile devices ...
+    gtk_im_context_focus_in(priv->im_context);               //CHB  
 }
 
 static gint

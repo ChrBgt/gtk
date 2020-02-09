@@ -941,9 +941,19 @@ gtk_entry_completion_popup_button_press (GtkWidget      *widget,
   / * if we come here, it's usually time to popdown * /
   _gtk_entry_completion_popdown (completion);
   */
+  
+  
   //CHB ipad hack: react again to the GDK_BUTTON_PRESS event
+  
   gint y_diff;
   GtkTreePath *path = NULL;
+
+  if(gtk_widget_get_mapped(widget)) { //CHB this block is new ...
+	//gtk_im_context_focus_out (completion->priv->entry->priv->im_context);
+    _gtk_entry_completion_popdown (completion);
+	return FALSE;
+  }
+  
   if (gtk_tree_view_get_path_at_pos (GTK_TREE_VIEW (completion->priv->tree_view),
                                      event->x, event->y,
                                      &path, NULL, NULL, NULL))
