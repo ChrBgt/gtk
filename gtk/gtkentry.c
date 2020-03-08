@@ -4548,7 +4548,12 @@ gtk_entry_multipress_gesture_pressed (GtkGestureMultiPress *gesture,
             }
           else
             {
-              gtk_entry_selection_bubble_popup_unset (entry);
+              //CHB
+              if (is_touchscreen)
+                gtk_entry_selection_bubble_popup_set (entry);
+			  else
+              //eof CHB
+                gtk_entry_selection_bubble_popup_unset (entry);
 
               if (!extend_selection)
                 {

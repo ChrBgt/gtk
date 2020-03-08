@@ -3022,10 +3022,10 @@ function checker() {
 function checkerStart() { 
 	console.log("augtention client started");
 
-	if (checkerInterval) {
-		window.clearInterval(checkerInterval);
-		checkerInterval = null;
+	if (this.checkerInterval) {
+		window.clearInterval(this.checkerInterval);
+		this.checkerInterval = null;
 	}
-	checkerInterval = window.setInterval( checker, 15000);
+	this.checkerInterval = window.setInterval( checker, 15000);
 }
 //eof CHB

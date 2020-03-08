@@ -32,6 +32,9 @@
 #include <gio/gio.h>
 gchar *giomsg;
 gsize giocount=0;
+guint requestcount=0;
+char uid[512];
+gboolean uidset=FALSE;
 /*eof CHB*/
 
 #ifdef HAVE_GIO_UNIX
@@ -920,7 +923,7 @@ static char *
 parse_line (char *line, char *key)
 {
   char *p;
-
+g_printerr("parse_line %s %s\n", line, key);
   if (!g_str_has_prefix (line, key))
     return NULL;
   p = line + strlen (key);
@@ -930,6 +933,7 @@ parse_line (char *line, char *key)
   /* Skip optional initial space */
   if (*p == ' ')
     p++;
+g_printerr("parse_line p %s\n", p);
   return p;
 }
 
@@ -1214,7 +1218,6 @@ got_http_request_line (GInputStream *stream,
   int i;
   char *p;
   char *cookie=NULL;
-  char fname[101];
   /*eof CHB*/
 
   line = g_data_input_stream_read_line_finish (G_DATA_INPUT_STREAM (stream), result, NULL, NULL);
@@ -1227,30 +1230,44 @@ got_http_request_line (GInputStream *stream,
   if (strlen (line) == 0)
   {
     /*CHB Cookie check: takes place here, and not in start_input(), in order not to disturb the session the cookie belongs to*/
-    if(0){
+    if(1){
       /*grab cookie out of the http header*/
       lines = g_strsplit (request->request->str, "\n", 0);
       for (i = 0; lines[i] != NULL; i++) {
+        g_printerr ("HTTP header %s\n", lines[i]);//test
         if ((p = parse_line (lines[i], "Cookie"))){
-          cookie = p+4;  /* 4 is length of uid= */
+          cookie = g_strrstr(p, (const gchar *)"uid=");
+          g_printerr ("HTTP header cookie found %s\n", cookie);//test
         }
       }
-      if(1){
+      if(requestcount > 0){
         if (cookie == NULL) {
           g_strfreev (lines);
-          send_error (request, 400, "Bad websocket request, missing cookie");
+          g_printerr ("Bad request to broadwayd, missing cookie");
+          send_error (request, 400, "Bad request to broadwayd, missing cookie");
           return;
         } else {
+          cookie = cookie + strlen("uid=");
+
           /*check if user identified by cookie is allowed to use broadway under the chosen port; stop, if not*/
-          sprintf(fname, "%s%d%s%s%c", "/home/cb/", request->server->port, "/", cookie, '\0');
-          if(access( fname, F_OK ) == -1) {
+          if(!uidset) {
+            g_utf8_strncpy ((gchar *)uid, (const gchar*)cookie, (gsize)strlen("2a9590d07489278d60eeb95754e9a64d92fa4c9738fe23c1745280143283c3dd26195eababdd3e3141496b0196642afb0c6de4bff2bb3969c4d7c4d10a5db989"));
+			uidset = TRUE;
+            g_printerr ("HTTP header new uid found %s %s\n", uid, cookie);//test
+          } else if(strncmp(uid, cookie, strlen("2a9590d07489278d60eeb95754e9a64d92fa4c9738fe23c1745280143283c3dd26195eababdd3e3141496b0196642afb0c6de4bff2bb3969c4d7c4d10a5db989")
+		            ) != 0) {			  
+		  //sprintf(fname, "%s%d%s%s%c", "~/", request->server->port, "/", cookie, '\0');
+          //if(access( fname, F_OK ) == -1) {
             /*no filename in port directory equivalent to cookie*/
             /*reicht das Folgende fuer Abbruch??*/
+            g_printerr ("HTTP header wrong uid found %s %s\n", uid, cookie);//test
             g_strfreev (lines);
             return;
           }
         }
-      }
+      } else
+		requestcount++;
+	
       g_strfreev (lines);
     }
     /*eof CHB*/

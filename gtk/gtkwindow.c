@@ -7703,7 +7703,7 @@ popover_size_allocate (GtkWidget        *widget,
   if (!popover->window)
     return;
 
-  if (GTK_IS_POPOVER (popover->widget))
+  if (GTK_IS_POPOVER (popover->widget)) {  //CHB { added
     gtk_popover_update_position (GTK_POPOVER (popover->widget));
 
   popover_get_rect (popover, window, &rect);
@@ -7720,6 +7720,7 @@ popover_size_allocate (GtkWidget        *widget,
     }
   else if (gdk_window_is_visible (popover->window))
     gdk_window_hide (popover->window);
+  }//CHB } added
 }
 
 /* _gtk_window_set_allocation:
