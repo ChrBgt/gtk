@@ -115,7 +115,7 @@ var sentInputCnt = 0;
 var inactiveCnt = 0;
 var destroyed = false;
 var sclDetermined = false;
-var andrd = null;
+//var andrd = null; can be defined locally
 var minibrowser = false; //false; //true when testing
 var checkerInterval = null;
 //eof CHB
@@ -2789,16 +2789,19 @@ function refocus()
     connect();
   } 
   
-  if(document.getElementById('overlay')!=document.activeElement)
+  if(document.getElementById('overlay')!=document.activeElement){
+	if(document.getElementById("fakeinput")) document.getElementById("fakeinput").focus(); //added due to Mac issue
     document.activeElement.blur();
-
+  }
 }
 
 function initialfocus()
 {
-  if(document.getElementById('overlay')!=document.activeElement)
+  if(document.getElementById('overlay')!=document.activeElement){
+	if(document.getElementById("fakeinput")) document.getElementById("fakeinput").focus(); //added due to Mac issue
     document.activeElement.blur();
-
+  }
+  
   if(inputSocket == null) {
     disconnected = true;
     if (ws) ws.close();
@@ -2877,9 +2880,10 @@ function connect()
     //eof CHB
 
     var iOS = /(iPad|iPhone|iPod)/gi.test( navigator.userAgent ); //CHB g --> gi
-    andrd = /(android)/gi.test( navigator.userAgent ); //CHB
+	var mac = /(Mac)/gi.test( navigator.userAgent ); //CHB g --> gi
+    var andrd = /(android)/gi.test( navigator.userAgent ); //CHB locally defined
 
-    if ( (iOS || andrd) && !document.getElementById('fakeinput') ) { //CHB andrd added, and check on fakeinput
+    if ( (iOS || andrd || mac) && !document.getElementById('fakeinput') ) { //CHB andrd and mac added, and check on fakeinput
         fakeInput = document.createElement("input");
         fakeInput.type = "text";
         fakeInput.autocapitalize="off";//CHB
@@ -2921,7 +2925,7 @@ function connect()
 
 
 //CHB
-var augtWait = 10;
+const augtWait = 10;
 
 function putAlive(uid, mode) {
     
@@ -2996,7 +3000,7 @@ function checker() {
         isAlive();
 
     } else if (!destroyed) {
-        if (inactiveCnt == ((augtWait-1)*4 && inputSocket) { // (augtWait-1)*4* 15 sec = augtWait-1 minutes --> augtcontrol: augtWait minutes
+        if (inactiveCnt == (augtWait-1)*4 && inputSocket) { // (augtWait-1)*4* 15 sec = augtWait-1 minutes --> augtcontrol: augtWait minutes
             //wait until user reacts
             let startS = new Date();
             alert("Warning:\naugtention's browsing session could be closed soon due to user's inactivity");

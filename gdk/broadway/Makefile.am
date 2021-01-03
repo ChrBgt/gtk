@@ -51,10 +51,15 @@ clienthtml.h: client.html
 
 EXTRA_DIST += client.html
 
-broadwayjs.h: broadway.js rawinflate.min.js
-	$(AM_V_GEN) $(PERL) $(srcdir)/toarray.pl broadway_js $(srcdir)/broadway.js $(srcdir)/rawinflate.min.js  > $@
+#CHB $(srcdir)/rawinflate.min.js eliminated
+#broadwayjs.h: broadway.js rawinflate.min.js
+#	$(AM_V_GEN) $(PERL) $(srcdir)/toarray.pl broadway_js $(srcdir)/broadway.js $(srcdir)/rawinflate.min.js  > $@
+broadwayjs.h: broadway.js
+	$(AM_V_GEN) $(PERL) $(srcdir)/toarray.pl broadway_js $(srcdir)/broadway.js  > $@
 
-EXTRA_DIST += broadway.js rawinflate.min.js
+#CHB rawinflate.min.js eliminated
+#EXTRA_DIST += broadway.js rawinflate.min.js
+EXTRA_DIST += broadway.js
 
 # built headers that don't get installed
 broadway_built_private_headers =	\
