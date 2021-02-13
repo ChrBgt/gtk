@@ -30,6 +30,13 @@
 #endif
 #include "gdkintl.h"
 
+/*CHB*/
+#include <gio/gio.h>
+int globw[10000];//CHB test
+int globh[10000];//CHB test
+int globi=0;//CHB test
+/*eof CHB*/
+
 typedef struct BroadwayInput BroadwayInput;
 
 struct _GdkBroadwayServer {
@@ -57,15 +64,31 @@ static GType gdk_broadway_server_get_type (void);
 
 G_DEFINE_TYPE (GdkBroadwayServer, gdk_broadway_server, G_TYPE_OBJECT)
 
+/*CHB*/
+typedef struct {
+  char name[36];
+  void *data;
+  gsize data_size;
+  gboolean is_shm; //added 10.1.2016
+} BroadwayShmData;
+
+static void *previous_data = NULL;
+static int bwsfd=-1;
+/*eof CHB */
+
 static void
 gdk_broadway_server_init (GdkBroadwayServer *server)
 {
+  bwsfd = open(getenv("BROADWAY_PP"), (O_WRONLY | O_SYNC ));/* CHB | O_SYNC | O_NONBLOCK | O_ASYNC*/
+
   server->next_serial = 1;
 }
 
 static void
 gdk_broadway_server_finalize (GObject *object)
 {
+  close(bwsfd); /*CHB*/
+
   G_OBJECT_CLASS (gdk_broadway_server_parent_class)->finalize (object);
 }
 
@@ -369,7 +392,7 @@ gdk_broadway_server_wait_for_reply (GdkBroadwayServer *server,
 	  break;
 	}
 
-      read_some_input_blocking (server);
+      read_some_input_nonblocking (server);//CHB non added
       parse_all_input (server);
     }
 
@@ -459,7 +482,8 @@ _gdk_broadway_server_new_window (GdkBroadwayServer *server,
   id = reply->new_window.id;
   
   g_free (reply);
-
+globw[globi] = msg.width;//CHB test
+globh[globi] = msg.height;globi++;//CHB test
   return id;
 }
 
@@ -663,6 +687,7 @@ create_random_shm (char *name, gsize size, gboolean *is_shm)
     }
 }
 
+/*CHB not needed any longer
 static const cairo_user_data_key_t gdk_broadway_shm_cairo_key;
 
 typedef struct {
@@ -671,11 +696,15 @@ typedef struct {
   gsize data_size;
   gboolean is_shm;
 } BroadwayShmSurfaceData;
+*/
 
 static void
 shm_data_destroy (void *_data)
 {
-  BroadwayShmSurfaceData *data = _data;
+  // CHB
+  // BroadwayShmSurfaceData *data = _data;
+  BroadwayShmData *data = _data;
+  //eof CHB
 
 #ifdef G_OS_UNIX
 
@@ -711,22 +740,93 @@ cairo_surface_t *
 _gdk_broadway_server_create_surface (int                 width,
 				     int                 height)
 {
-  BroadwayShmSurfaceData *data;
+  //BroadwayShmSurfaceData *data; CHB
   cairo_surface_t *surface;
-
+  
+  /* CHB
   data = g_new (BroadwayShmSurfaceData, 1);
   data->data_size = width * height * sizeof (guint32);
   data->data = create_random_shm (data->name, data->data_size, &data->is_shm);
 
   surface = cairo_image_surface_create_for_data ((guchar *)data->data,
 						 CAIRO_FORMAT_ARGB32, width, height, width * sizeof (guint32));
+  */
+  surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, width, height); //CHB
+
   g_assert (surface != NULL);
   
+  /*CHB
   cairo_surface_set_user_data (surface, &gdk_broadway_shm_cairo_key,
 			       data, shm_data_destroy);
-
+  */
+  
   return surface;
 }
+
+/*CHB*/
+void
+_gdk_broadway_server_transmit_selected(GdkBroadwayServer *server,
+                                       const gchar *text)
+{
+  BroadwayRequestTransmit msg;
+  BroadwayShmData *data;
+  guint32 lentext = (guint32)(strlen(text));
+//g_print(">>>> %s", text);
+  if(previous_data){
+    shm_data_destroy(previous_data);
+    previous_data = NULL;
+  }
+
+  data = g_new (BroadwayShmData, 1);
+  data->data_size =  (gsize)(lentext * sizeof (gchar));
+  data->data = create_random_shm (data->name, data->data_size, &data->is_shm);  //&data->is_shm added! 10.1.16
+
+  memcpy((void *)(data->data), (void *)text, (size_t)(data->data_size));  /*guchar?*/
+//g_print(">>>>>> %s", (gchar *)data->data);
+  memcpy (msg.name, data->name, 36);
+  msg.length = lentext;
+
+  previous_data = (void *)data;
+
+  gdk_broadway_server_send_message (server, msg,
+                                    BROADWAY_REQUEST_SELECTED);
+}
+
+void
+_gdk_broadway_server_transmit_uri_and_title(GdkBroadwayServer *server,
+                                            const gchar *uri,
+                                                                                    const gchar *title)
+{
+  BroadwayRequestTransmit msg;
+  BroadwayShmData *data;
+  gchar *text = NULL;
+  gchar *sep = "____urititle____";
+  guint32 lentext;
+
+  text = g_strdup_printf ("%s%s%s", uri, sep, title);
+  lentext = (guint32)(strlen(text));
+
+  if(previous_data){
+    shm_data_destroy(previous_data);
+    previous_data = NULL;
+  }
+
+  data = g_new (BroadwayShmData, 1);
+  data->data_size =  (gsize)(lentext * sizeof (gchar));
+  data->data = create_random_shm (data->name, data->data_size, &data->is_shm);  //&data->is_shm added! 10.1.16
+
+  memcpy((void *)(data->data), (void *)(text), (size_t)(data->data_size));  /*guchar?*/
+
+  memcpy (msg.name, data->name, 36);
+  msg.length = lentext;
+
+  previous_data = (void *)data;
+
+  gdk_broadway_server_send_message (server, msg,
+                                    BROADWAY_REQUEST_URI_AND_TITLE);
+  g_free(text);
+}
+/*eof CHB*/
 
 void
 _gdk_broadway_server_window_update (GdkBroadwayServer *server,
@@ -734,19 +834,30 @@ _gdk_broadway_server_window_update (GdkBroadwayServer *server,
 				    cairo_surface_t *surface)
 {
   BroadwayRequestUpdate msg;
-  BroadwayShmSurfaceData *data;
+  //BroadwayShmSurfaceData *data; CHB
 
   if (surface == NULL)
     return;
 
+  /*CHB
   data = cairo_surface_get_user_data (surface, &gdk_broadway_shm_cairo_key);
   g_assert (data != NULL);
-
+  */
+  
   msg.id = id;
-  memcpy (msg.name, data->name, 36);
+  memcpy (msg.name, "dummy", 36);    //CHB: dummy, no data will be found
   msg.width = cairo_image_surface_get_width (surface);
   msg.height = cairo_image_surface_get_height (surface);
-
+  
+  //CHB
+  {
+  unsigned char *data;
+  cairo_surface_flush (surface);
+  data = cairo_image_surface_get_data(surface);
+  write(bwsfd, data, msg.width * msg.height * sizeof(guint32));  //4 bytes per pixel
+  }
+  //eof CHB
+  
   gdk_broadway_server_send_message (server, msg,
 				    BROADWAY_REQUEST_UPDATE);
 }

@@ -322,7 +322,8 @@ gdk_seat_default_init (GdkSeatDefault *seat)
 {
 }
 
-GdkSeat *
+//__attribute__((visibility("default"))) added CHB
+__attribute__((visibility("default"))) GdkSeat *
 gdk_seat_default_new_for_master_pair (GdkDevice *pointer,
                                       GdkDevice *keyboard)
 {
@@ -345,8 +346,8 @@ gdk_seat_default_new_for_master_pair (GdkDevice *pointer,
 
   return seat;
 }
-
-void
+//__attribute__((visibility("default"))) added CHB
+__attribute__((visibility("default"))) void
 gdk_seat_default_add_slave (GdkSeatDefault *seat,
                             GdkDevice      *device)
 {

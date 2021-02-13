@@ -1,7 +1,9 @@
 ## Makefile.am for GTK+
 include $(top_srcdir)/Makefile.decl
 
-SRC_SUBDIRS = gdk gtk libgail-util modules demos tests testsuite examples
+#CHB gdk/broadway added, TODO check: SUBDIRS win32 added, build removed
+SRC_SUBDIRS = gdk/broadway gdk gtk libgail-util modules demos tests testsuite examples
+#SUBDIRS = po po-properties $(SRC_SUBDIRS) docs m4macros build
 SUBDIRS = po po-properties $(SRC_SUBDIRS) docs m4macros win32
 
 ACLOCAL_AMFLAGS = -I m4 ${ACLOCAL_FLAGS}

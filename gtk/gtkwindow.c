@@ -154,7 +154,7 @@
  * empty container widget, we use NO_CONTENT_CHILD_NAT as natural width/height
  * instead.
  */
-
+ 
 typedef struct _GtkWindowPopover GtkWindowPopover;
 
 struct _GtkWindowPopover
@@ -5552,7 +5552,7 @@ gtk_window_translate_csd_pos (GtkWindow *window,
                               gint       apply)
 {
   GtkWindowPrivate *priv = window->priv;
-
+  
   if (priv->type != GTK_WINDOW_TOPLEVEL)
     return;
 
@@ -7467,6 +7467,7 @@ gtk_window_realize (GtkWidget *widget)
       _gtk_widget_get_allocation (widget, &allocation);
       attributes.width = allocation.width;
       attributes.height = allocation.height;
+
       attributes.event_mask = gtk_widget_get_events (widget);
       attributes.event_mask |= (GDK_EXPOSURE_MASK |
                                 GDK_BUTTON_PRESS_MASK |
@@ -7764,7 +7765,7 @@ popover_size_allocate (GtkWidget        *widget,
   if (!popover->window)
     return;
 
-  if (GTK_IS_POPOVER (popover->widget))
+  if (GTK_IS_POPOVER (popover->widget)) {  //CHB { added
     gtk_popover_update_position (GTK_POPOVER (popover->widget));
 
   popover_get_rect (popover, window, &rect);
@@ -7781,6 +7782,7 @@ popover_size_allocate (GtkWidget        *widget,
     }
   else if (gdk_window_is_visible (popover->window))
     gdk_window_hide (popover->window);
+  }//CHB } added
 }
 
 /* _gtk_window_set_allocation:
@@ -8698,7 +8700,7 @@ gtk_window_move_focus (GtkWidget        *widget,
 
 static void
 gtk_window_real_set_focus (GtkWindow *window,
-			   GtkWidget *focus)
+                           GtkWidget *focus)
 {
   GtkWindowPrivate *priv = window->priv;
   GtkWidget *old_focus = priv->focus_widget;
@@ -8728,16 +8730,16 @@ gtk_window_real_set_focus (GtkWindow *window,
 	  (priv->focus_widget != priv->default_widget))
         {
           _gtk_widget_set_has_default (priv->focus_widget, FALSE);
-	  gtk_widget_queue_draw (priv->focus_widget);
+	      gtk_widget_queue_draw (priv->focus_widget);
 
-	  if (priv->default_widget)
+          if (priv->default_widget)
             _gtk_widget_set_has_default (priv->default_widget, TRUE);
-	}
+        }
 
       priv->focus_widget = NULL;
 
       if (priv->has_focus)
-	do_focus_change (old_focus, FALSE);
+        do_focus_change (old_focus, FALSE);
 
       g_object_notify (G_OBJECT (old_focus), "is-focus");
     }
@@ -8751,16 +8753,16 @@ gtk_window_real_set_focus (GtkWindow *window,
 
       if (gtk_widget_get_receives_default (priv->focus_widget) &&
 	  (priv->focus_widget != priv->default_widget))
-	{
-	  if (gtk_widget_get_can_default (priv->focus_widget))
+        {
+          if (gtk_widget_get_can_default (priv->focus_widget))
             _gtk_widget_set_has_default (priv->focus_widget, TRUE);
 
-	  if (priv->default_widget)
+          if (priv->default_widget)
             _gtk_widget_set_has_default (priv->default_widget, FALSE);
-	}
+        }
 
       if (priv->has_focus)
-	do_focus_change (priv->focus_widget, TRUE);
+        do_focus_change (priv->focus_widget, TRUE);
 
       /* It's possible for do_focus_change() above to have callbacks
        * that clear priv->focus_widget here.
@@ -8782,7 +8784,7 @@ gtk_window_real_set_focus (GtkWindow *window,
   if (old_focus)
     {
       if (old_focus_had_default != gtk_widget_has_default (old_focus))
-	gtk_widget_queue_draw (old_focus);
+        gtk_widget_queue_draw (old_focus);
 	
       g_object_thaw_notify (G_OBJECT (old_focus));
       g_object_unref (old_focus);
@@ -8790,7 +8792,7 @@ gtk_window_real_set_focus (GtkWindow *window,
   if (focus)
     {
       if (focus_had_default != gtk_widget_has_default (focus))
-	gtk_widget_queue_draw (focus);
+        gtk_widget_queue_draw (focus);
 
       g_object_thaw_notify (G_OBJECT (focus));
       g_object_unref (focus);
@@ -9281,9 +9283,11 @@ gtk_window_do_popup_fallback (GtkWindow      *window,
   gtk_menu_attach_to_widget (GTK_MENU (priv->popup_menu),
                              GTK_WIDGET (window),
                              popup_menu_detach);
-
+  /*CHB
   menuitem = gtk_menu_item_new_with_label (_("Restore"));
   gtk_widget_show (menuitem);
+  */
+  
   /* "Restore" means "Unmaximize" or "Unminimize"
    * (yes, some WMs allow window menu to be shown for minimized windows).
    * Not restorable:
@@ -9291,6 +9295,8 @@ gtk_window_do_popup_fallback (GtkWindow      *window,
    *   - non-resizable windows that are not minimized
    *   - non-normal windows
    */
+   
+  /*CHB
   if ((gtk_widget_is_visible (GTK_WIDGET (window)) &&
        !(maximized || iconified)) ||
       (!iconified && !priv->resizable) ||
@@ -9351,7 +9357,7 @@ gtk_window_do_popup_fallback (GtkWindow      *window,
   menuitem = gtk_separator_menu_item_new ();
   gtk_widget_show (menuitem);
   gtk_menu_shell_append (GTK_MENU_SHELL (priv->popup_menu), menuitem);
-
+  */
   menuitem = gtk_menu_item_new_with_label (_("Close"));
   gtk_widget_show (menuitem);
   if (!priv->deletable)
@@ -9437,6 +9443,29 @@ gtk_window_compute_configure_request_size (GtkWindow   *window,
       *width = MAX (*width, w);
       *height = MAX (*height, h);
 
+	  //CHB
+      if (info && atoi(getenv("EPI_GTK")) &&
+	      info->default_width == atoi(getenv("EPI_W")) && info->default_height == atoi(getenv("EPI_H")))
+	    {
+		  GtkBorder window_border = { 0 };
+		
+		  get_shadow_width (window, &window_border);
+          info->default_width -= (window_border.left + window_border.right);
+          info->default_height -= (window_border.top + window_border.bottom);
+
+	      if (window->priv->title_box != NULL &&
+              gtk_widget_get_visible (window->priv->title_box) &&
+              gtk_widget_get_child_visible (window->priv->title_box))
+            {
+              gint minimum_height;
+              gint natural_height;
+
+              gtk_widget_get_preferred_height (priv->title_box, &minimum_height, &natural_height);
+              info->default_height -= natural_height;
+            }
+        }
+	  //eof CHB
+	  
       /* Override with default size */
       if (info)
         {
@@ -12098,14 +12127,14 @@ window_update_has_focus (GtkWindow *window)
 
       if (has_focus)
 	{
-	  if (priv->focus_widget &&
+	  if (1 && priv->focus_widget && //CHB 0&& added
 	      priv->focus_widget != widget &&
 	      !gtk_widget_has_focus (priv->focus_widget))
 	    do_focus_change (priv->focus_widget, TRUE);
 	}
       else
 	{
-	  if (priv->focus_widget &&
+	  if (1 && priv->focus_widget && //CHB 0&& added
 	      priv->focus_widget != widget &&
 	      gtk_widget_has_focus (priv->focus_widget))
 	    do_focus_change (priv->focus_widget, FALSE);
@@ -12963,7 +12992,7 @@ gtk_window_export_handle (GtkWindow               *window,
     }
 #endif
 #ifdef GDK_WINDOWING_WAYLAND
-  if (GDK_IS_WAYLAND_DISPLAY (gtk_widget_get_display (GTK_WIDGET (window))))
+  if (1 || GDK_IS_WAYLAND_DISPLAY (gtk_widget_get_display (GTK_WIDGET (window)))) //CHB 1 || added
     {
       GdkWindow *gdk_window = gtk_widget_get_window (GTK_WIDGET (window));
       WaylandWindowHandleExportedData *data;

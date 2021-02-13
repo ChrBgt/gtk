@@ -19,19 +19,30 @@ AM_CPPFLAGS =				\
 
 LDADDS = $(GDK_DEP_LIBS) -lrt
 
-noinst_LTLIBRARIES = libgdk-broadway.la
+## CHB
+##noinst_LTLIBRARIES = libgdk-broadway.la
+lib_LTLIBRARIES = libgdk-broadway.la
 
 bin_PROGRAMS = broadwayd
 
 libgdkinclude_HEADERS = 	\
 	gdkbroadway.h
 
-libgdkbroadwayinclude_HEADERS = 	\
+#CHB ab 6. eingefuegt, Achtung: es sind nicht alle headers dabei!
+libgdkbroadwayinclude_HEADERS =         \
 	gdkbroadwaydisplay.h		\
 	gdkbroadwaywindow.h		\
 	gdkbroadwaycursor.h		\
 	gdkbroadwaymonitor.h		\
-	gdkbroadwayvisual.h
+	gdkbroadwayvisual.h	\
+	gdkbroadway-server.h	\
+	gdkdevice-broadway.h	\
+	gdkdevicemanager-broadway.h	\
+	gdkdisplay-broadway.h	\
+	gdkeventsource.h	\
+	gdkprivate-broadway.h	\
+	gdkscreen-broadway.h	\
+	gdkwindow-broadway.h
 
 EXTRA_DIST += toarray.pl
 
@@ -40,10 +51,15 @@ clienthtml.h: client.html
 
 EXTRA_DIST += client.html
 
-broadwayjs.h: broadway.js rawinflate.min.js
-	$(AM_V_GEN) $(PERL) $(srcdir)/toarray.pl broadway_js $(srcdir)/broadway.js $(srcdir)/rawinflate.min.js  > $@
+#CHB $(srcdir)/rawinflate.min.js eliminated
+#broadwayjs.h: broadway.js rawinflate.min.js
+#	$(AM_V_GEN) $(PERL) $(srcdir)/toarray.pl broadway_js $(srcdir)/broadway.js $(srcdir)/rawinflate.min.js  > $@
+broadwayjs.h: broadway.js
+	$(AM_V_GEN) $(PERL) $(srcdir)/toarray.pl broadway_js $(srcdir)/broadway.js  > $@
 
-EXTRA_DIST += broadway.js rawinflate.min.js
+#CHB rawinflate.min.js eliminated
+#EXTRA_DIST += broadway.js rawinflate.min.js
+EXTRA_DIST += broadway.js
 
 # built headers that don't get installed
 broadway_built_private_headers =	\

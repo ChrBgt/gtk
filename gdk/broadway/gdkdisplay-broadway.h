@@ -22,8 +22,19 @@
 #ifndef __GDK_BROADWAY_DISPLAY__
 #define __GDK_BROADWAY_DISPLAY__
 
+/*CHB*/
+#include <gdk/gdkdisplayprivate.h>
+#include <gdk/gdkkeys.h>
+#include <gdk/gdkwindow.h>
+#include <gdk/gdkinternals.h>
+#include <gdk/gdkmain.h>
+#include "gdkbroadway-server.h"
+#include "gdkmonitorprivate.h" //came with gtk 3.22
+/*eof CHB*/
+
 #include "gdkbroadwaydisplay.h"
 
+/*CHB
 #include "gdkdisplayprivate.h"
 #include "gdkkeys.h"
 #include "gdkwindow.h"
@@ -31,7 +42,7 @@
 #include "gdkmain.h"
 #include "gdkbroadway-server.h"
 #include "gdkmonitorprivate.h"
-
+*/
 G_BEGIN_DECLS
 
 struct _GdkBroadwayDisplay

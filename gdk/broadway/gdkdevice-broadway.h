@@ -42,8 +42,9 @@ struct _GdkBroadwayDeviceClass
   GdkDeviceClass parent_class;
 };
 
-G_GNUC_INTERNAL
-GType gdk_broadway_device_get_type (void) G_GNUC_CONST;
+/*G_GNUC_INTERNAL CHB*/
+/*CHB GDK_AVAILABLE_IN_ALL added */
+GDK_AVAILABLE_IN_ALL GType gdk_broadway_device_get_type (void) G_GNUC_CONST;
 
 G_END_DECLS
 

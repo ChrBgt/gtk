@@ -23,6 +23,7 @@
 #include "config.h"
 
 #include "gdkdisplay-broadway.h"
+#include <sys/time.h> //CHB
 
 #include "gdkdisplay.h"
 #include "gdkeventsource.h"
@@ -274,21 +275,91 @@ gdk_broadway_display_get_next_serial (GdkDisplay *display)
   return _gdk_broadway_server_get_next_serial (broadway_display->server);
 }
 
+//CHB
+static const guint kDelay = 250;
+static guint hideKeyboardPlanned = 0;
+
+static void
+gdk_broadway_display_show_keyboard_cb (gpointer display)
+{
+  GdkBroadwayDisplay *d = GDK_BROADWAY_DISPLAY(display);
+    
+  g_return_if_fail (GDK_IS_BROADWAY_DISPLAY ( d ));
+
+  _gdk_broadway_server_set_show_keyboard (d->server, TRUE);
+}
+
+static void
+gdk_broadway_display_hide_keyboard_cb (gpointer display)
+{
+  GdkBroadwayDisplay *d = GDK_BROADWAY_DISPLAY(display);
+
+  hideKeyboardPlanned = 0;
+  
+  g_return_if_fail (GDK_IS_BROADWAY_DISPLAY ( d ));
+
+  _gdk_broadway_server_set_show_keyboard (d->server, FALSE);
+}
+//eof CHB
+
 void
 gdk_broadway_display_show_keyboard (GdkBroadwayDisplay *display)
 {
+  //CHB
+  if(hideKeyboardPlanned) {
+	//don't launch "show keyboard", as we just had a "hide keyboard"
+	hideKeyboardPlanned = 0;
+  } else
+    g_timeout_add (kDelay, (GSourceFunc)gdk_broadway_display_show_keyboard_cb, (gpointer)display );
+    
+  /* CHB
   g_return_if_fail (GDK_IS_BROADWAY_DISPLAY (display));
 
   _gdk_broadway_server_set_show_keyboard (display->server, TRUE);
+  */
 }
 
 void
 gdk_broadway_display_hide_keyboard (GdkBroadwayDisplay *display)
 {
+  //CHB
+  if(!hideKeyboardPlanned) 
+    hideKeyboardPlanned = g_timeout_add (kDelay, (GSourceFunc)gdk_broadway_display_hide_keyboard_cb, (gpointer)display );
+  else {
+    hideKeyboardPlanned = 0; //forget about the already started "hide keyboard", and launch another one
+	g_timeout_add (kDelay, (GSourceFunc)gdk_broadway_display_hide_keyboard_cb, (gpointer)display );
+  }
+  //eof CHB
+  
+  /*CHB
   g_return_if_fail (GDK_IS_BROADWAY_DISPLAY (display));
 
   _gdk_broadway_server_set_show_keyboard (display->server, FALSE);
+  */
 }
+
+//CHB
+static void
+gdk_broadway_display_disseminate_text_property (GdkDisplay     *display,
+                                                const gchar    *text)
+{
+  GdkBroadwayDisplay *broadway_display;
+  broadway_display = GDK_BROADWAY_DISPLAY (display);
+  //g_print(">> %s", text);   //CHB test
+  _gdk_broadway_server_transmit_selected(broadway_display->server, text);
+}
+
+static void
+gdk_broadway_display_disseminate_uri_and_title (GdkDisplay     *display,
+                                                const gchar    *uri,
+												const gchar    *title)
+{
+  GdkBroadwayDisplay *broadway_display;
+  broadway_display = GDK_BROADWAY_DISPLAY (display);
+g_print(">> %s %s\n", uri, title);
+  _gdk_broadway_server_transmit_uri_and_title(broadway_display->server, uri, title);
+}
+//eof CHB
 
 static int
 gdk_broadway_display_get_n_monitors (GdkDisplay *display)
@@ -367,5 +438,8 @@ gdk_broadway_display_class_init (GdkBroadwayDisplayClass * class)
   display_class->get_n_monitors = gdk_broadway_display_get_n_monitors;
   display_class->get_monitor = gdk_broadway_display_get_monitor;
   display_class->get_primary_monitor = gdk_broadway_display_get_primary_monitor;
+
+  display_class->disseminate_text_property = gdk_broadway_display_disseminate_text_property; /*CHB*/
+  display_class->disseminate_uri_and_title = gdk_broadway_display_disseminate_uri_and_title; /*CHB*/
 }
 

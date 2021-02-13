@@ -30,6 +30,9 @@ if OS_LINUX
 fontconfig_programs = testfontchooserdialog
 endif
 
+#CHB under testframe:   deleted following line
+#        $(fontconfig_programs)
+
 noinst_PROGRAMS =  $(TEST_PROGS)	\
 	overlayscroll			\
 	syncscroll			\
@@ -75,7 +78,6 @@ noinst_PROGRAMS =  $(TEST_PROGS)	\
 	testfontselectiondialog		\
 	testfontchooser			\
 	testfontoptions			\
-	$(fontconfig_programs)		\
 	testframe			\
 	testfullscreen			\
 	testgeometry			\

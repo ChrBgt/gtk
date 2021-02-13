@@ -4295,6 +4295,10 @@ gtk_entry_update_handles (GtkEntry          *entry,
   else
     gtk_entry_move_handle (entry, GTK_TEXT_HANDLE_POSITION_CURSOR,
                            cursor, 0, height);
+						   
+  if (mode != GTK_TEXT_HANDLE_MODE_NONE && priv->im_context) //CHB for keyboard on mobile devices ...
+    gtk_im_context_focus_in(priv->im_context);               //CHB  
+
 }
 
 static gboolean
@@ -4563,7 +4567,12 @@ gtk_entry_multipress_gesture_pressed (GtkGestureMultiPress *gesture,
             }
           else
             {
-              gtk_entry_selection_bubble_popup_unset (entry);
+              //CHB
+              if (is_touchscreen)
+                gtk_entry_selection_bubble_popup_set (entry);
+			  else
+              //eof CHB
+                gtk_entry_selection_bubble_popup_unset (entry);
 
               if (!extend_selection)
                 {
@@ -6291,6 +6300,9 @@ gtk_entry_recompute (GtkEntry *entry)
 
       if (handle_mode != GTK_TEXT_HANDLE_MODE_NONE)
         gtk_entry_update_handles (entry, handle_mode);
+	
+      //if (handle_mode != GTK_TEXT_HANDLE_MODE_NONE && priv->im_context) //CHB for keyboard on mobile devices ... verschoben... (prüfen TODO)
+      //  gtk_im_context_focus_in(priv->im_context);                      //CHB
     }
 
   gtk_widget_queue_draw (GTK_WIDGET (entry));

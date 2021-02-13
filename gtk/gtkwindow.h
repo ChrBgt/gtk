@@ -140,7 +140,6 @@ typedef enum
   GTK_WIN_POS_CENTER_ON_PARENT
 } GtkWindowPosition;
 
-
 GDK_AVAILABLE_IN_ALL
 GType      gtk_window_get_type                 (void) G_GNUC_CONST;
 GDK_AVAILABLE_IN_ALL

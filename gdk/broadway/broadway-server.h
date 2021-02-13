@@ -96,4 +96,11 @@ cairo_surface_t * broadway_server_open_surface (BroadwayServer *server,
 						int width,
 						int height);
 
+/*CHB*/
+//gchar *  //CHB test
+void
+broadway_server_transmit_selected(BroadwayServer *server,
+                                            char *name,
+                                             int length);
+/*eof CHB*/
 #endif /* __BROADWAY_SERVER__ */

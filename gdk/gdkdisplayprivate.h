@@ -17,7 +17,6 @@
 
 #ifndef __GDK_DISPLAY_PRIVATE_H__
 #define __GDK_DISPLAY_PRIVATE_H__
-
 #include "gdkdisplay.h"
 #include "gdkwindow.h"
 #include "gdkcursor.h"
@@ -236,7 +235,11 @@ struct _GdkDisplayClass
                                                         gchar        ***list);
   gchar *                (*utf8_to_string_target)      (GdkDisplay     *display,
                                                         const gchar    *text);
-
+  void                   (*disseminate_text_property)  (GdkDisplay     *display,
+                                                        const gchar    *text); /*CHB added*/
+  void                   (*disseminate_uri_and_title)  (GdkDisplay     *display,
+                                                        const gchar    *uri,
+							const gchar    *title); /*CHB added*/
   gboolean               (*make_gl_context_current)    (GdkDisplay        *display,
                                                         GdkGLContext      *context);
 
@@ -261,15 +264,16 @@ typedef void (* GdkDisplayPointerInfoForeach) (GdkDisplay           *display,
                                                GdkPointerWindowInfo *device_info,
                                                gpointer              user_data);
 
-void                _gdk_display_update_last_event    (GdkDisplay     *display,
+/* CHB GDK_AVAILABLE_IN_ALL added */
+GDK_AVAILABLE_IN_ALL void                _gdk_display_update_last_event    (GdkDisplay     *display,
                                                        const GdkEvent *event);
-void                _gdk_display_device_grab_update   (GdkDisplay *display,
+GDK_AVAILABLE_IN_ALL void                _gdk_display_device_grab_update   (GdkDisplay *display,
                                                        GdkDevice  *device,
                                                        GdkDevice  *source_device,
                                                        gulong      current_serial);
-GdkDeviceGrabInfo * _gdk_display_get_last_device_grab (GdkDisplay *display,
+GDK_AVAILABLE_IN_ALL GdkDeviceGrabInfo * _gdk_display_get_last_device_grab (GdkDisplay *display,
                                                        GdkDevice  *device);
-GdkDeviceGrabInfo * _gdk_display_add_device_grab      (GdkDisplay       *display,
+GDK_AVAILABLE_IN_ALL GdkDeviceGrabInfo * _gdk_display_add_device_grab      (GdkDisplay       *display,
                                                        GdkDevice        *device,
                                                        GdkWindow        *window,
                                                        GdkWindow        *native_window,
@@ -279,18 +283,18 @@ GdkDeviceGrabInfo * _gdk_display_add_device_grab      (GdkDisplay       *display
                                                        gulong            serial_start,
                                                        guint32           time,
                                                        gboolean          implicit);
-GdkDeviceGrabInfo * _gdk_display_has_device_grab      (GdkDisplay       *display,
+GDK_AVAILABLE_IN_ALL GdkDeviceGrabInfo * _gdk_display_has_device_grab      (GdkDisplay       *display,
                                                        GdkDevice        *device,
                                                        gulong            serial);
-gboolean            _gdk_display_end_device_grab      (GdkDisplay       *display,
+GDK_AVAILABLE_IN_ALL gboolean            _gdk_display_end_device_grab      (GdkDisplay       *display,
                                                        GdkDevice        *device,
                                                        gulong            serial,
                                                        GdkWindow        *if_child,
                                                        gboolean          implicit);
-gboolean            _gdk_display_check_grab_ownership (GdkDisplay       *display,
+GDK_AVAILABLE_IN_ALL gboolean            _gdk_display_check_grab_ownership (GdkDisplay       *display,
                                                        GdkDevice        *device,
                                                        gulong            serial);
-void                _gdk_display_add_touch_grab       (GdkDisplay       *display,
+GDK_AVAILABLE_IN_ALL void                _gdk_display_add_touch_grab       (GdkDisplay       *display,
                                                        GdkDevice        *device,
                                                        GdkEventSequence *sequence,
                                                        GdkWindow        *window,
@@ -298,49 +302,50 @@ void                _gdk_display_add_touch_grab       (GdkDisplay       *display
                                                        GdkEventMask      event_mask,
                                                        unsigned long     serial_start,
                                                        guint32           time);
-GdkTouchGrabInfo *  _gdk_display_has_touch_grab       (GdkDisplay       *display,
+GDK_AVAILABLE_IN_ALL GdkTouchGrabInfo *  _gdk_display_has_touch_grab       (GdkDisplay       *display,
                                                        GdkDevice        *device,
                                                        GdkEventSequence *sequence,
                                                        gulong            serial);
-gboolean            _gdk_display_end_touch_grab       (GdkDisplay       *display,
+GDK_AVAILABLE_IN_ALL gboolean            _gdk_display_end_touch_grab       (GdkDisplay       *display,
                                                        GdkDevice        *device,
                                                        GdkEventSequence *sequence);
-void                _gdk_display_enable_motion_hints  (GdkDisplay       *display,
+GDK_AVAILABLE_IN_ALL void                _gdk_display_enable_motion_hints  (GdkDisplay       *display,
                                                        GdkDevice        *device);
-GdkPointerWindowInfo * _gdk_display_get_pointer_info  (GdkDisplay       *display,
+GDK_AVAILABLE_IN_ALL GdkPointerWindowInfo * _gdk_display_get_pointer_info  (GdkDisplay       *display,
                                                        GdkDevice        *device);
-void                _gdk_display_pointer_info_foreach (GdkDisplay       *display,
+GDK_AVAILABLE_IN_ALL void                _gdk_display_pointer_info_foreach (GdkDisplay       *display,
                                                        GdkDisplayPointerInfoForeach func,
                                                        gpointer          user_data);
-gulong              _gdk_display_get_next_serial      (GdkDisplay       *display);
-void                _gdk_display_pause_events         (GdkDisplay       *display);
-void                _gdk_display_unpause_events       (GdkDisplay       *display);
-void                _gdk_display_event_data_copy      (GdkDisplay       *display,
+GDK_AVAILABLE_IN_ALL gulong              _gdk_display_get_next_serial      (GdkDisplay       *display);
+GDK_AVAILABLE_IN_ALL void                _gdk_display_pause_events         (GdkDisplay       *display);
+GDK_AVAILABLE_IN_ALL void                _gdk_display_unpause_events       (GdkDisplay       *display);
+GDK_AVAILABLE_IN_ALL void                _gdk_display_event_data_copy      (GdkDisplay       *display,
                                                        const GdkEvent   *event,
                                                        GdkEvent         *new_event);
-void                _gdk_display_event_data_free      (GdkDisplay       *display,
+GDK_AVAILABLE_IN_ALL void                _gdk_display_event_data_free      (GdkDisplay       *display,
                                                        GdkEvent         *event);
-void                _gdk_display_create_window_impl   (GdkDisplay       *display,
+GDK_AVAILABLE_IN_ALL void                _gdk_display_create_window_impl   (GdkDisplay       *display,
                                                        GdkWindow        *window,
                                                        GdkWindow        *real_parent,
                                                        GdkScreen        *screen,
                                                        GdkEventMask      event_mask,
                                                        GdkWindowAttr    *attributes,
                                                        gint              attributes_mask);
-GdkWindow *         _gdk_display_create_window        (GdkDisplay       *display);
+GDK_AVAILABLE_IN_ALL GdkWindow *         _gdk_display_create_window        (GdkDisplay       *display);
 
-gboolean            gdk_display_make_gl_context_current  (GdkDisplay        *display,
+GDK_AVAILABLE_IN_ALL gboolean            gdk_display_make_gl_context_current  (GdkDisplay        *display,
                                                           GdkGLContext      *context);
-
-void                gdk_display_add_seat              (GdkDisplay       *display,
+GDK_AVAILABLE_IN_ALL void                gdk_display_add_seat              (GdkDisplay       *display,
                                                        GdkSeat          *seat);
-void                gdk_display_remove_seat           (GdkDisplay       *display,
+GDK_AVAILABLE_IN_ALL void                gdk_display_remove_seat           (GdkDisplay       *display,
                                                        GdkSeat          *seat);
-void                gdk_display_monitor_added         (GdkDisplay       *display,
+GDK_AVAILABLE_IN_ALL void                gdk_display_monitor_added         (GdkDisplay       *display,
                                                        GdkMonitor       *monitor);
-void                gdk_display_monitor_removed       (GdkDisplay       *display,
+GDK_AVAILABLE_IN_ALL void                gdk_display_monitor_removed       (GdkDisplay       *display,
                                                        GdkMonitor       *monitor);
+/*eof added CHB*/
 
 G_END_DECLS
 
 #endif  /* __GDK_DISPLAY_PRIVATE_H__ */
+

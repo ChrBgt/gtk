@@ -202,7 +202,12 @@ GtkWidget *gtk_get_event_widget         (GdkEvent        *event);
 GDK_AVAILABLE_IN_ALL
 void       gtk_propagate_event          (GtkWidget       *widget,
                                          GdkEvent        *event);
-
+//CHB
+GDK_AVAILABLE_IN_ALL
+void gtk_disseminate_uri_and_title 		(GdkDisplay *display, 
+										 const gchar *uri, 
+										 const gchar *title);
+//eof CHB
 
 G_END_DECLS
 

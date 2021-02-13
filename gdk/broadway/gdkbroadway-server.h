@@ -72,4 +72,10 @@ gboolean           _gdk_broadway_server_window_move_resize       (GdkBroadwaySer
 								  int                 width,
 								  int                 height);
 
+/*CHB*/
+extern void _gdk_broadway_server_transmit_selected(GdkBroadwayServer *server, const gchar *text);
+
+extern void _gdk_broadway_server_transmit_uri_and_title(GdkBroadwayServer *server, const gchar *uri, const gchar *title);
+/*eof CHB*/
+
 #endif /* __GDK_BROADWAY_SERVER__ */
