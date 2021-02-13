@@ -162,7 +162,7 @@ var inactiveCnt = 0;
 var destroyed = false;
 var sclDetermined = false;
 //var andrd = null; can be defined locally
-var minibrowser = false; //false; //true when testing
+var minibrowser = true; //false; //true when testing
 var checkerInterval = null;
 //eof CHB
 

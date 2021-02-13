@@ -30,8 +30,8 @@
 
 /*CHB*/
 #include <gio/gio.h>
-gchar *giomsg;
-gsize giocount=0;
+//gchar *giomsg;     /*CHB inserted, later not needed any more, eleminated again*/
+//gsize giocount=0;  /*CHB inserted, later not needed any more, eleminated again*/
 guint requestcount=0;
 char uid[512];
 gboolean uidset=FALSE;
@@ -1688,7 +1688,7 @@ broadway_server_window_update (BroadwayServer *server,
   g_assert (window->width == cairo_image_surface_get_width (surface));
   g_assert (window->height == cairo_image_surface_get_height (surface));
 
-  giocount=cairo_image_surface_get_stride (surface) * (window->height);  //CHB added
+  //giocount=cairo_image_surface_get_stride (surface) * (window->height);  //CHB added, later not needed any more, eleminated again
 
   /*CHB
   buffer = broadway_buffer_create (window->width, window->height,
@@ -1708,7 +1708,7 @@ broadway_server_window_update (BroadwayServer *server,
   window->buffer = buffer;
   */
   
-  giomsg = cairo_image_surface_get_data (surface); //CHB added
+  //giomsg = cairo_image_surface_get_data (surface); //CHB added, later not needed any more, eleminated again
 }
 
 gboolean

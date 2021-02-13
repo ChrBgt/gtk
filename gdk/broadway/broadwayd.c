@@ -22,7 +22,7 @@
 BroadwayServer *server;
 GList *clients;
 #define GIOMSGMAX 500000 /*CHB*/
-gchar giomsg[GIOMSGMAX]; /*CHB*/
+//gchar giomsg[GIOMSGMAX]; /*CHB inserted, later not needed any more, eleminated again*/
 
 static guint32 client_id_count = 1;
 
